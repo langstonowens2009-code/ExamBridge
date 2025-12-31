@@ -20,10 +20,15 @@ export default function DashboardPage() {
     async function fetchPlans() {
       if (user) {
         try {
-          const idToken = await user.getIdToken();
-          const result = await getStudyPlansAction(idToken);
+          // Pass the user's UID directly to the server action
+          const result = await getStudyPlansAction(user.uid);
           if (result.success) {
-            setPlans(result.data);
+            // Parse the ISO string date back to a Date object
+            const parsedPlans = result.data.map((plan: any) => ({
+              ...plan,
+              createdAt: new Date(plan.createdAt),
+            }));
+            setPlans(parsedPlans);
           } else {
             setError(result.error || 'Failed to fetch study plans.');
           }
@@ -89,7 +94,7 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent className="flex-grow">
                    <CardDescription>
-                    Created {formatDistanceToNow(plan.createdAt.toDate(), { addSuffix: true })}
+                    Created {formatDistanceToNow(plan.createdAt, { addSuffix: true })}
                   </CardDescription>
                   <p className="text-sm text-muted-foreground mt-1">
                     {plan.modules?.reduce((acc: number, week: any) => acc + week.modules.length, 0) || 0} total modules

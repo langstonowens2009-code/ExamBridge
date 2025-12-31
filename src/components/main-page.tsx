@@ -6,6 +6,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format } from "date-fns";
 import { Loader2, Link as LinkIcon, Type, Check, ChevronsUpDown, Calendar as CalendarIcon, X } from 'lucide-react';
+import { addDoc, collection, Timestamp } from 'firebase/firestore';
+import { db } from '@/firebase/firestore';
+
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -65,7 +68,7 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
   const [showApSearch, setShowApSearch] = useState(false);
   const [isExamTypeSelected, setIsExamTypeSelected] = useState(false);
   const { toast } = useToast();
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -94,13 +97,30 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
     setIsLoading(true);
     setStudyPath(null);
 
-    const idToken = user ? await user.getIdToken() : undefined;
-    const result = await generateStudyPathAction(values, idToken);
+    const result = await generateStudyPathAction(values);
 
     setIsLoading(false);
 
     if (result.success && result.data) {
       setStudyPath(result.data);
+      // If the user is logged in, save the study plan to their profile.
+      if (user) {
+        try {
+          const studyPlansCollection = collection(db, 'users', user.uid, 'studyPlans');
+          await addDoc(studyPlansCollection, {
+            examType: values.examType,
+            createdAt: Timestamp.fromDate(new Date()),
+            modules: result.data,
+          });
+        } catch (error) {
+          console.error("Error saving study plan: ", error);
+          toast({
+            variant: "destructive",
+            title: "Could not save your plan.",
+            description: "Your new study plan was generated, but we couldn't save it to your profile.",
+          });
+        }
+      }
     } else {
       toast({
         variant: 'destructive',

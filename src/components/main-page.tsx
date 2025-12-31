@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format } from "date-fns";
-import { Loader2, Sparkles, Link as LinkIcon, Type, Check, ChevronsUpDown, Calendar as CalendarIcon } from 'lucide-react';
+import { Loader2, Link as LinkIcon, Type, Check, ChevronsUpDown, Calendar as CalendarIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -126,15 +126,7 @@ export function MainPage() {
 
   return (
     <div className="w-full max-w-4xl flex flex-col items-center text-center animate-in fade-in-50 duration-500">
-        <div className="bg-primary/10 p-3 rounded-full mb-4 ring-4 ring-primary/20">
-            <Sparkles className="h-8 w-8 text-primary" />
-        </div>
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">Bridge Your Knowledge Gap</h1>
-        <p className="mt-4 max-w-xl text-lg text-muted-foreground">
-            Paste a link to any paid study resource or paste the syllabus text directly. Our AI will build you a personalized, free learning path.
-        </p>
-
-        <Card className="w-full mt-8 shadow-2xl bg-card/70 backdrop-blur-sm border-primary/20">
+        <Card className="w-full mt-8 shadow-2xl bg-white/5 backdrop-blur-lg border-primary/20">
             <CardContent className="p-6">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">

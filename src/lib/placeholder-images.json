@@ -1,3 +1,10 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-background",
+      "description": "A futuristic school-related visual with glowing holographic 3D elements.",
+      "imageUrl": "https://images.unsplash.com/photo-1750859613776-c8209c98c86b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8aG9sb2dyYXBoaWMlMjBib29rfGVufDB8fHx8MTc2NzE5OTIyM3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "holographic book"
+    }
+  ]
 }

@@ -58,7 +58,7 @@ const formatStudyPathPrompt = ai.definePrompt({
 Syllabus Topics:
 {{{syllabusTopics}}}
 
-Your response MUST be a valid JSON string that can be parsed directly. The string should represent an array of objects. Do not wrap the JSON string in markdown backticks or any other text. Each object must contain 'topic', 'link', and 'description' keys.
+Your response MUST be a valid JSON string that can be parsed directly. Do not wrap the JSON string in markdown backticks or any other text. Output ONLY the raw JSON object.
 Example format:
 [
   {
@@ -93,25 +93,31 @@ const analyzeSyllabusAndMatchResourcesFlow = ai.defineFlow(
     console.log("Step 1 Success: Found raw topics:", rawSyllabusTopics);
 
     // Step 2: Pass the raw text to the formatting prompt.
-    const { text: jsonString } = await formatStudyPathPrompt({
+    const { text: rawJsonString } = await formatStudyPathPrompt({
       syllabusTopics: rawSyllabusTopics,
       examType: input.examType,
     });
     
-    if (!jsonString) {
+    if (!rawJsonString) {
       console.log("Step 2 failed: AI did not return a JSON string.");
       return [];
     }
-    console.log("Step 2 Success: Received JSON string:", jsonString);
+    
+    // Log the raw string from the AI before any parsing.
+    console.log("Raw AI Output:", rawJsonString);
 
     try {
-      // The model should return a JSON string, so we parse it.
-      const parsedOutput = JSON.parse(jsonString);
+      // Robust Parser: Clean the string before parsing.
+      const cleanedJsonString = rawJsonString
+        .replace(/```json|```/g, '') // Strip markdown fences
+        .trim(); // Remove leading/trailing whitespace
+
+      const parsedOutput = JSON.parse(cleanedJsonString);
       // Validate the parsed output against the schema to be safe.
       return AnalyzeSyllabusOutputSchema.parse(parsedOutput);
     } catch (e: any) {
       console.error("Failed to parse JSON from AI response:", e.message);
-      console.error("Malformed JSON string:", jsonString);
+      console.error("Malformed JSON string (after cleaning):", rawJsonString);
       // If parsing fails, return an empty array which will trigger a user-facing error.
       return [];
     }

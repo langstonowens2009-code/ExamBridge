@@ -249,7 +249,7 @@ Unit 3: Advanced Calculus"
                                                                 </PopoverTrigger>
                                                                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                                                     <Command>
-                                                                        <CommandInput placeholder="Search exam type..." />
+                                                                        
                                                                         <CommandEmpty>No exam type found.</CommandEmpty>
                                                                         <CommandGroup>
                                                                             {EXAM_CATEGORIES.map((exam) => (
@@ -418,5 +418,7 @@ Unit 3: Advanced Calculus"
     </div>
   );
 }
+
+    
 
     

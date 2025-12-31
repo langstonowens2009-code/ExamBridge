@@ -16,6 +16,7 @@ import { Calendar } from "@/components/ui/calendar";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -117,7 +118,7 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
     return <StudyPathDashboard studyPath={studyPath} onReset={() => setStudyPath(null)} />;
   }
   
-  const isButtonDisabled = isLoading || authLoading;
+  const isButtonDisabled = isLoading;
 
   return (
     <div className="w-full max-w-4xl flex flex-col items-center text-center animate-in fade-in-50 duration-500">
@@ -159,6 +160,9 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
                                                 <FormControl>
                                                     <Input placeholder="https://www.paid-course.com" {...field} className="h-12 text-base" />
                                                 </FormControl>
+                                                <FormDescription>
+                                                    Enter the URL of a paid study resource, and we'll find free alternatives.
+                                                </FormDescription>
                                                 <FormMessage />
                                             </FormItem>
                                         )}

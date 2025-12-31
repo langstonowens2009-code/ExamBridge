@@ -136,7 +136,7 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
     return <StudyPathDashboard studyPath={studyPath} onReset={() => setStudyPath(null)} />;
   }
   
-  const isButtonDisabled = isLoading;
+  const isButtonDisabled = isLoading || !isExamTypeSelected;
   const selectedExamType = form.watch('examType');
 
   return (
@@ -149,7 +149,7 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
           onValueChange={onAccordionValueChange}
         >
             <AccordionItem value="item-1" className="border-none">
-                <AccordionTrigger className="w-full h-12 text-lg font-semibold bg-primary/80 text-primary-foreground hover:bg-primary transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/30 hover:shadow-primary/50 rounded-md px-6 hover:no-underline">
+                <AccordionTrigger className="w-full h-12 text-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/30 hover:shadow-primary/50 rounded-md px-6 hover:no-underline">
                      {isLoading ? (
                         <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> AI Analyzing Syllabus...</>
                     ) : (
@@ -157,7 +157,7 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
                     )}
                 </AccordionTrigger>
                 <AccordionContent>
-                    <Card className="w-full mt-4 shadow-2xl bg-white/5 backdrop-blur-lg border-primary/20 rounded-lg">
+                    <Card className="w-full mt-4 shadow-2xl bg-black/30 backdrop-blur-md border-white/10 rounded-lg">
                         <CardContent className="p-6">
                             <Form {...form}>
                                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -396,7 +396,7 @@ Unit 3: Advanced Calculus"
                                                 {...field}
                                                 />
                                             </FormControl>
-                                            <FormDescription>
+                                            <FormDescription className="leading-relaxed">
                                                 Tell the AI your specific goals or what to focus on.
                                             </FormDescription>
                                             <FormMessage />
@@ -405,7 +405,7 @@ Unit 3: Advanced Calculus"
                                     />
 
 
-                                    <Button type="submit" size="lg" className="w-full h-12 text-lg font-semibold" disabled={isButtonDisabled}>
+                                    <Button type="submit" size="lg" className="w-full h-12 text-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/30 hover:shadow-primary/50" disabled={isButtonDisabled}>
                                         {isLoading ? 'Submitting...' : 'Submit'}
                                     </Button>
                                 </form>
@@ -418,7 +418,3 @@ Unit 3: Advanced Calculus"
     </div>
   );
 }
-
-    
-
-    

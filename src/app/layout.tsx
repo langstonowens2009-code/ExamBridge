@@ -2,9 +2,9 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/context/AuthContext';
-import { Inter } from 'next/font/google';
+import { Open_Sans } from 'next/font/google';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const openSans = Open_Sans({ subsets: ['latin'], variable: '--font-body' });
 
 export const metadata: Metadata = {
   title: 'ExamBridge',
@@ -18,7 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.variable} font-body antialiased bg-background`}>
+      <body className={`${openSans.variable} font-sans antialiased bg-background`}>
         <AuthProvider>
           {children}
           <Toaster />

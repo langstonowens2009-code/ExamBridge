@@ -23,7 +23,7 @@ export function HeroSection({ onStartJourney }: HeroSectionProps) {
                     priority
                 />
             )}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
             <div className="relative z-10 p-4 max-w-4xl mx-auto animate-in fade-in-50 duration-700">
                 <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-white to-purple-300">
                     Master Your Exams. Powered by AI.
@@ -33,7 +33,7 @@ export function HeroSection({ onStartJourney }: HeroSectionProps) {
                 </p>
                 <Button 
                     size="lg" 
-                    className="mt-8 bg-primary/80 text-primary-foreground hover:bg-primary transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/30 hover:shadow-primary/50"
+                    className="mt-8 bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/30 hover:shadow-primary/50"
                     onClick={onStartJourney}
                 >
                     Start Your Journey

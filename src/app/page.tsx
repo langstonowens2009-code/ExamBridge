@@ -4,6 +4,8 @@ import { HeroSection } from '@/components/hero-section';
 import { MainPage } from '@/components/main-page';
 import { useState } from 'react';
 
+export const maxDuration = 60; // Wait up to 60 seconds for server actions
+
 export default function Home() {
   const [openAccordion, setOpenAccordion] = useState<string>('');
 

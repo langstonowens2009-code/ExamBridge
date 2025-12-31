@@ -4,15 +4,12 @@ import Image from 'next/image';
 import { Button } from './ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
-export function HeroSection() {
-    const heroImage = PlaceHolderImages.find(img => img.id === 'hero-background');
+interface HeroSectionProps {
+    onStartJourney: () => void;
+}
 
-    const handleScroll = () => {
-        const element = document.getElementById('main-content');
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
-        }
-    };
+export function HeroSection({ onStartJourney }: HeroSectionProps) {
+    const heroImage = PlaceHolderImages.find(img => img.id === 'hero-background');
 
     return (
         <section className="relative h-[60vh] min-h-[400px] flex items-center justify-center text-center text-white">
@@ -37,7 +34,7 @@ export function HeroSection() {
                 <Button 
                     size="lg" 
                     className="mt-8 bg-primary/80 text-primary-foreground hover:bg-primary transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/30 hover:shadow-primary/50"
-                    onClick={handleScroll}
+                    onClick={onStartJourney}
                 >
                     Start Your Journey
                 </Button>

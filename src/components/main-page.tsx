@@ -49,8 +49,12 @@ const formSchema = z.discriminatedUnion('inputType', [
   }),
 ]);
 
+interface MainPageProps {
+  openAccordionValue: string;
+  onAccordionValueChange: (value: string) => void;
+}
 
-export function MainPage() {
+export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPageProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [studyPath, setStudyPath] = useState<WeeklyStudyPath[] | null>(null);
   const [inputType, setInputType] = useState<'url' | 'text'>('url');
@@ -127,7 +131,13 @@ export function MainPage() {
 
   return (
     <div className="w-full max-w-4xl flex flex-col items-center text-center animate-in fade-in-50 duration-500">
-        <Accordion type="single" collapsible className="w-full">
+        <Accordion 
+          type="single" 
+          collapsible 
+          className="w-full"
+          value={openAccordionValue}
+          onValueChange={onAccordionValueChange}
+        >
             <AccordionItem value="item-1" className="border-none">
                 <AccordionTrigger className="w-full h-12 text-lg font-semibold bg-primary/80 text-primary-foreground hover:bg-primary transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/30 hover:shadow-primary/50 rounded-md px-6 hover:no-underline">
                      {isLoading ? (

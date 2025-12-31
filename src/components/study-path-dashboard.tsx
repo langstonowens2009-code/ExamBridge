@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, BookOpen, ExternalLink, File, MoreVertical, RefreshCw } from 'lucide-react';
+import { ArrowRight, BookOpen, ExternalLink, File, MoreVertical, RefreshCw, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -10,12 +10,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type { StudyPathModule } from '@/ai/schemas/study-path';
+import type { WeeklyStudyPath } from '@/ai/schemas/study-path';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 
 interface StudyPathDashboardProps {
-  studyPath: StudyPathModule[];
+  studyPath: WeeklyStudyPath[];
   onReset: () => void;
 }
 
@@ -76,30 +77,41 @@ export function StudyPathDashboard({ studyPath, onReset }: StudyPathDashboardPro
         </div>
       </div>
       
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {studyPath.map((module, index) => (
-          <Card key={index} className="flex flex-col transform hover:-translate-y-1 transition-transform duration-300 ease-in-out shadow-lg hover:shadow-primary/30 border-border hover:border-primary/50">
-            <CardHeader>
-              <CardTitle className="flex items-start gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary no-print">
-                    <BookOpen className="h-5 w-5"/>
-                </span>
-                <span>{module.topic}</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1">
-              <CardDescription>{module.description}</CardDescription>
-            </CardContent>
-            <CardFooter>
-              <Button asChild className="w-full no-print" variant="outline">
-                <Link href={module.link} target="_blank" rel="noopener noreferrer">
-                  Go to Resource <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            </CardFooter>
-          </Card>
+      <Accordion type="multiple" defaultValue={studyPath.map(week => week.week)} className="w-full space-y-4">
+        {studyPath.map((weeklyModule, index) => (
+          <AccordionItem value={weeklyModule.week} key={index} className="border rounded-lg bg-card/50">
+            <AccordionTrigger className="p-6 text-xl font-bold hover:no-underline">
+                {weeklyModule.week}
+            </AccordionTrigger>
+            <AccordionContent className="p-6 pt-0">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {weeklyModule.modules.map((module, moduleIndex) => (
+                        <Card key={moduleIndex} className="flex flex-col transform hover:-translate-y-1 transition-transform duration-300 ease-in-out shadow-lg hover:shadow-primary/30 border-border hover:border-primary/50">
+                            <CardHeader>
+                            <CardTitle className="flex items-start gap-3">
+                                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary no-print">
+                                    <BookOpen className="h-5 w-5"/>
+                                </span>
+                                <span>{module.topic}</span>
+                            </CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex-1">
+                            <CardDescription>{module.description}</CardDescription>
+                            </CardContent>
+                            <CardFooter>
+                            <Button asChild className="w-full no-print" variant="outline">
+                                <Link href={module.link} target="_blank" rel="noopener noreferrer">
+                                Go to Resource <ArrowRight className="ml-2 h-4 w-4" />
+                                </Link>
+                            </Button>
+                            </CardFooter>
+                        </Card>
+                    ))}
+                </div>
+            </AccordionContent>
+          </AccordionItem>
         ))}
-      </div>
+      </Accordion>
     </div>
   );
 }

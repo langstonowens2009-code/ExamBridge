@@ -2,7 +2,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { StudyPathModuleSchema } from '@/ai/schemas/study-path';
+import { WeeklyStudyPathModuleSchema } from '@/ai/schemas/study-path';
 
 // Local knowledge base for core syllabi
 const EXAM_DATA: Record<string, string> = {
@@ -31,14 +31,18 @@ const EXAM_DATA: Record<string, string> = {
 const syllabusAnalysisInputSchema = z.object({
   examType: z.string(),
   syllabusText: z.string().optional(),
+  testDate: z.date().optional(),
 });
 
-const studyPathOutputSchema = z.array(StudyPathModuleSchema);
+const studyPathOutputSchema = z.array(WeeklyStudyPathModuleSchema);
 
 const fallbackResult = [{
-    topic: 'Search Timed Out',
-    description: 'The AI search took too long to complete. This can happen during peak hours. Please try generating the plan again.',
-    link: '#'
+    week: 'Week 1',
+    modules: [{
+        topic: 'Search Timed Out',
+        description: 'The AI search took too long to complete. This can happen during peak hours. Please try generating the plan again.',
+        link: '#'
+    }]
 }];
 
 /**
@@ -54,6 +58,16 @@ export async function analyzeSyllabusAndMatchResources(
     const examKey = input.examType.toUpperCase();
     const syllabusContext = EXAM_DATA[examKey] || input.syllabusText || `Core topics for the ${input.examType} exam`;
 
+    let timelinePrompt = '';
+    if (input.testDate) {
+      const today = new Date();
+      const timeDiff = input.testDate.getTime() - today.getTime();
+      const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
+      timelinePrompt = `The user's test is on ${input.testDate.toLocaleDateString()}. They have ${daysLeft} days to prepare. Create a study plan organized by week (e.g., 'Week 1', 'Week 2'). Prioritize the most important topics first.`;
+    } else {
+      timelinePrompt = `Create a study plan organized by week (e.g., 'Week 1', 'Week 2').`;
+    }
+
     // Step 1: The "Researcher" - Perform competitive analysis and find free alternatives.
     const researcherResult = await ai.generate({
       model: 'gemini-pro',
@@ -64,10 +78,12 @@ export async function analyzeSyllabusAndMatchResources(
         First, mentally review what paid test prep sites offer for the topics in the syllabus below.
         Then, find the best free learning resources (like specific YouTube videos from major educational channels, Khan Academy, or official documentation) that teach those same concepts for 2025 exam prep.
         
+        ${timelinePrompt}
+
         Syllabus Context:
         ${syllabusContext}
 
-        Provide a list of topics and the links to the free resources you found.
+        Provide a list of topics and the links to the free resources you found, organized by week.
       `,
     });
 
@@ -82,8 +98,9 @@ export async function analyzeSyllabusAndMatchResources(
     const architectResult = await ai.generate({
       model: 'gemini-1.5-flash',
       prompt: `
-        You are a meticulous study plan architect. Take the following raw research notes and format them into a clean JSON array of study modules. 
-        Each object in the array must have three properties: 'topic', 'description', and 'link'.
+        You are a meticulous study plan architect. Take the following raw research notes and format them into a clean JSON array of weekly study modules. 
+        Each object in the array must have a 'week' property (e.g., "Week 1") and a 'modules' property, which is an array of study objects.
+        Each study object must have three properties: 'topic', 'description', and 'link'.
         The description should be a concise, one-sentence summary of the topic.
         Only output the JSON array.
 

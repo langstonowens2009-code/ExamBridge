@@ -4,13 +4,15 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2, Sparkles, Link as LinkIcon, Type, Check, ChevronsUpDown } from 'lucide-react';
+import { format } from "date-fns";
+import { Loader2, Sparkles, Link as LinkIcon, Type, Check, ChevronsUpDown, Calendar as CalendarIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Calendar } from "@/components/ui/calendar";
 import {
   Form,
   FormControl,
@@ -23,7 +25,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { EXAM_CATEGORIES, AP_CLASSES } from '@/lib/constants';
 import { generateStudyPathAction } from '@/app/actions';
-import type { StudyPathModule } from '@/ai/schemas/study-path';
+import type { WeeklyStudyPath } from '@/ai/schemas/study-path';
 import { StudyPathDashboard } from './study-path-dashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -35,18 +37,20 @@ const formSchema = z.discriminatedUnion('inputType', [
     inputType: z.literal('url'),
     originalUrl: z.string().url({ message: 'Please enter a valid URL.' }),
     examType: z.string().min(1, { message: 'Please select an exam type.' }),
+    testDate: z.date().optional(),
   }),
   z.object({
     inputType: z.literal('text'),
     syllabusText: z.string().min(20, 'Syllabus text must be at least 20 characters.'),
     examType: z.string().min(1, { message: 'Please select an exam type.' }),
+    testDate: z.date().optional(),
   }),
 ]);
 
 
 export function MainPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [studyPath, setStudyPath] = useState<StudyPathModule[] | null>(null);
+  const [studyPath, setStudyPath] = useState<WeeklyStudyPath[] | null>(null);
   const [inputType, setInputType] = useState<'url' | 'text'>('url');
   const [showApSearch, setShowApSearch] = useState(false);
   const { toast } = useToast();
@@ -161,8 +165,8 @@ export function MainPage() {
                             />
                         )}
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                             <div className={cn("md:col-span-3", showApSearch && "md:col-span-1")}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className={cn("md:col-span-2", showApSearch && "md:col-span-1")}>
                                 <FormField
                                     control={form.control}
                                     name="examType"
@@ -223,7 +227,7 @@ export function MainPage() {
                                 />
                             </div>
                             {showApSearch && (
-                              <div className="md:col-span-2">
+                              <div className="md:col-span-1">
                                 <FormField
                                     control={form.control}
                                     name="examType"
@@ -283,6 +287,49 @@ export function MainPage() {
                               </div>
                             )}
                         </div>
+
+                         <FormField
+                            control={form.control}
+                            name="testDate"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-col items-start">
+                                <FormLabel className="mb-2">When is your test date?</FormLabel>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                    <FormControl>
+                                        <Button
+                                        variant={"outline"}
+                                        className={cn(
+                                            "w-full pl-3 text-left font-normal h-12 text-base",
+                                            !field.value && "text-muted-foreground"
+                                        )}
+                                        >
+                                        {field.value ? (
+                                            format(field.value, "PPP")
+                                        ) : (
+                                            <span>Pick a date</span>
+                                        )}
+                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                        </Button>
+                                    </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        mode="single"
+                                        selected={field.value}
+                                        onSelect={field.onChange}
+                                        disabled={(date) =>
+                                        date < new Date(new Date().setDate(new Date().getDate() - 1))
+                                        }
+                                        initialFocus
+                                    />
+                                    </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
 
                         <Button type="submit" size="lg" className="w-full h-12 text-lg font-semibold" disabled={isLoading}>
                             {isLoading ? (

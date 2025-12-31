@@ -7,7 +7,13 @@ export const StudyPathModuleSchema = z.object({
   link: z.string(),
 });
 
+export const WeeklyStudyPathModuleSchema = z.object({
+  week: z.string(),
+  modules: z.array(StudyPathModuleSchema),
+});
+
 export type StudyPathModule = z.infer<typeof StudyPathModuleSchema>;
+export type WeeklyStudyPath = z.infer<typeof WeeklyStudyPathModuleSchema>;
 
 export const ExplainResourceMatchingRationaleInputSchema = z.object({
   topic: z.string().describe('The topic from the paid resource.'),

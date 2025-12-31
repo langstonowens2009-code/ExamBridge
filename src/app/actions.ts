@@ -11,11 +11,13 @@ const formSchema = z.discriminatedUnion('inputType', [
     inputType: z.literal('url'),
     originalUrl: z.string().url(),
     examType: z.string().min(1),
+    testDate: z.date().optional(),
   }),
   z.object({
     inputType: z.literal('text'),
     syllabusText: z.string().min(20, 'Syllabus text must be at least 20 characters.'),
     examType: z.string().min(1),
+    testDate: z.date().optional(),
   }),
 ]);
 

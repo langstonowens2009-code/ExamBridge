@@ -3,33 +3,11 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { WeeklyStudyPathModuleSchema } from '@/ai/schemas/study-path';
-
-// Local knowledge base for core syllabi
-const EXAM_DATA: Record<string, string> = {
-  "SAT": "Evidence-Based Reading, Writing and Language, Math (No Calculator), Math (Calculator), Essay (Optional)",
-  "ACT": "English, Mathematics, Reading, Science, Writing (Optional)",
-  "AP": "Core curriculum mastery for specific AP subject (e.g., Calculus, US History, Biology) and free-response question strategies.",
-  "AP CALCULUS AB": "Limits and Continuity, Differentiation, Integration, Differential Equations",
-  "AP CALCULUS BC": "All AB topics plus Parametric Equations, Polar Coordinates, Vector-Valued Functions, and Series",
-  "AP STATISTICS": "Exploring Data, Sampling and Experimentation, Probability, Statistical Inference",
-  "AP PHYSICS 1": "Kinematics, Dynamics, Circular Motion and Gravitation, Energy, Momentum, Simple Harmonic Motion, Torque and Rotational Motion",
-  "AP CHEMISTRY": "Atomic Structure, Intermolecular Forces, Chemical Reactions, Kinetics, Thermodynamics, Equilibrium",
-  "AP BIOLOGY": "Evolution, Cellular Processes, Genetics, Information Transfer, Ecology",
-  "AP US HISTORY": "American and National Identity; Politics and Power; Work, Exchange, and Technology; Culture and Society; Migration and Settlement; Geography and the Environment; America in the World",
-  "AP WORLD HISTORY": "The Global Tapestry, Networks of Exchange, Land-Based Empires, Transoceanic Interconnections, Revolutions, Consequences of Industrialization, Global Conflict, Cold War and Decolonization, Globalization",
-  "AP ENGLISH LANGUAGE AND COMPOSITION": "Rhetorical Analysis, Argumentation, Synthesis",
-  "AP ENGLISH LITERATURE AND COMPOSITION": "Literary Analysis of prose and poetry",
-  "LSAT": "Logical Reasoning, Analytical Reasoning (Logic Games), Reading Comprehension, Unscored Experimental Section, Unscored Writing Sample",
-  "MCAT": "Chemical and Physical Foundations of Biological Systems; Critical Analysis and Reading Skills (CARS); Biological and Biochemical Foundations of Living Systems; Psychological, Social, and Biological Foundations of Behavior",
-  "GMAT": "Quantitative Reasoning, Verbal Reasoning, Integrated Reasoning, Analytical Writing Assessment",
-  "USMLE": "Step 1: Basic Sciences, Step 2: Clinical Knowledge (CK) and Clinical Skills (CS), Step 3: Advanced Clinical Medicine and Management",
-  "COMLEX": "Dimension 1: Competency Domains (e.g., Osteopathic Principles), Dimension 2: Clinical Presentations",
-  "NCLEX": "Safe and Effective Care Environment, Health Promotion and Maintenance, Psychosocial Integrity, Physiological Integrity",
-  "BAR": "Torts, Contracts, Constitutional Law, Criminal Law and Procedure, Evidence, Real Property, Civil Procedure",
-};
+import { googleSearch, browse } from '@genkit-ai/google-genai';
 
 const syllabusAnalysisInputSchema = z.object({
   examType: z.string(),
+  originalUrl: z.string().url().optional(),
   syllabusText: z.string().optional(),
   testDate: z.date().optional(),
 });
@@ -46,66 +24,88 @@ const fallbackResult = [{
 }];
 
 /**
- * Analyzes a syllabus (either from a knowledge base or custom text) and finds free learning resources.
- * This function uses a two-step AI process:
- * 1. Researcher: Finds what paid study companies offer, then finds free equivalents.
- * 2. Architect: Formats the raw findings into a structured JSON output.
+ * Analyzes a syllabus (from a URL or text) and finds free learning resources to supplement it.
+ * This function uses a three-step AI agent process:
+ * 1. Syllabus Analyst: Fetches content from a URL and extracts the core topics.
+ * 2. Free Resource Researcher: Finds high-quality free materials for the specified exam.
+ * 3. Study Plan Architect: Synthesizes the information, identifies gaps, and builds a structured study plan.
  */
 export async function analyzeSyllabusAndMatchResources(
   input: z.infer<typeof syllabusAnalysisInputSchema>
 ): Promise<z.infer<typeof studyPathOutputSchema>> {
   try {
-    const examKey = input.examType.toUpperCase();
-    const syllabusContext = EXAM_DATA[examKey] || input.syllabusText || `Core topics for the ${input.examType} exam`;
+    const { examType, originalUrl, syllabusText, testDate } = input;
+
+    let paidResourceTopics = '';
+    if (originalUrl) {
+      console.log(`Analyzing URL: ${originalUrl}`);
+      // Step 1: The "Syllabus Analyst" - Scrape and understand the paid resource.
+      const analysisResult = await ai.generate({
+        model: 'gemini-1.5-flash',
+        tools: [browse],
+        prompt: `
+          You are a Syllabus Analyst. Your job is to extract the key topics and teaching points from the provided URL.
+          Fetch the content of this URL: ${originalUrl}
+          Summarize the main educational topics it covers in a simple list.
+        `,
+      });
+      paidResourceTopics = analysisResult.text;
+    } else if (syllabusText) {
+      paidResourceTopics = syllabusText;
+    } else {
+      throw new Error("Either a URL or syllabus text must be provided.");
+    }
+    
+    console.log(`Extracted Topics: ${paidResourceTopics}`);
+
+    // Step 2: The "Free Resource Researcher" - Find authoritative free resources.
+    const searchResult = await ai.generate({
+        model: 'gemini-pro',
+        tools: [googleSearch],
+        prompt: `
+          You are a Free Resource Researcher. Your goal is to find the best free, high-authority study materials for the ${examType} exam for the year 2025.
+          Focus exclusively on resources from official sources like Khan Academy, College Board, or official exam PDF guides.
+          Provide a list of topics and the links to the best free resources you find.
+        `
+    });
+    const freeResourceText = searchResult.text;
+    console.log(`Found Free Resources: ${freeResourceText}`);
+
 
     let timelinePrompt = '';
-    if (input.testDate) {
+    if (testDate) {
       const today = new Date();
-      const timeDiff = input.testDate.getTime() - today.getTime();
+      const timeDiff = testDate.getTime() - today.getTime();
       const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
-      timelinePrompt = `The user's test is on ${input.testDate.toLocaleDateString()}. They have ${daysLeft} days to prepare. Create a study plan organized by week (e.g., 'Week 1', 'Week 2'). Prioritize the most important topics first.`;
+      timelinePrompt = `The user's test is on ${testDate.toLocaleDateString()}. They have ${daysLeft} days to prepare. Create a study plan organized by week.`;
     } else {
-      timelinePrompt = `Create a study plan organized by week (e.g., 'Week 1', 'Week 2').`;
+      timelinePrompt = `Create a study plan organized by week.`;
     }
 
-    // Step 1: The "Researcher" - Perform competitive analysis and find free alternatives.
-    const researcherResult = await ai.generate({
-      model: 'gemini-pro',
-      prompt: `
-        You are an expert academic tutor performing competitive analysis.
-        Your goal is to build a free study plan that competes with paid platforms like UWorld, Acely, and Princeton Review for the ${input.examType}.
-
-        First, mentally review what paid test prep sites offer for the topics in the syllabus below.
-        Then, find the best free learning resources (like specific YouTube videos from major educational channels, Khan Academy, or official documentation) that teach those same concepts for 2025 exam prep.
-        
-        ${timelinePrompt}
-
-        Syllabus Context:
-        ${syllabusContext}
-
-        Provide a list of topics and the links to the free resources you found, organized by week.
-      `,
-    });
-
-    const rawText = researcherResult.text;
-    
-    if (!rawText) {
-        console.error("Researcher AI failed to produce any text.");
-        return fallbackResult;
-    }
-
-    // Step 2: The "Architect" - Use a second AI call to structure the raw text into clean JSON.
+    // Step 3: The "Study Plan Architect" - Synthesize, find gaps, and build the plan.
     const architectResult = await ai.generate({
       model: 'gemini-1.5-flash',
       prompt: `
-        You are a meticulous study plan architect. Take the following raw research notes and format them into a clean JSON array of weekly study modules. 
-        Each object in the array must have a 'week' property (e.g., "Week 1") and a 'modules' property, which is an array of study objects.
-        Each study object must have three properties: 'topic', 'description', and 'link'.
-        The description should be a concise, one-sentence summary of the topic.
-        Only output the JSON array.
+        You are a Study Plan Architect. Your task is to create a supplementary study plan.
+        You have been given a list of topics from a user's paid resource and a list of high-quality free resources.
+        
+        Your Goal: Compare the paid resource topics with the free resources. Create a weekly study plan using ONLY the free resources that fill gaps or offer a deeper dive than the paid resource likely does.
 
-        Raw Research:
-        ${rawText}
+        ${timelinePrompt}
+
+        For each module in your plan, the 'description' MUST explain why this free resource is a necessary supplement. 
+        For example: 'While the paid site covers the basics, this Khan Academy video provides a deep-dive required for the new exam format.' or 'This official guide covers a niche topic often missed by third-party resources.'
+
+        Format your final output as a clean JSON array of weekly study modules.
+        Each object in the array must have a 'week' property and a 'modules' array.
+        Each study object in the 'modules' array must have 'topic', 'description', and 'link'.
+        Only output the final JSON array.
+
+        Paid Resource Topics:
+        ${paidResourceTopics}
+
+        Available Free Resources:
+        ${freeResourceText}
       `,
       output: {
         schema: studyPathOutputSchema,
@@ -123,7 +123,6 @@ export async function analyzeSyllabusAndMatchResources(
 
   } catch (error) {
     console.error("Error in analyzeSyllabusAndMatchResources flow:", error);
-    // On any failure (including timeout), return the fallback object to stop the loading spinner.
     return fallbackResult;
   }
 }

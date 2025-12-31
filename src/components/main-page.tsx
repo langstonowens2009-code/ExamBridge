@@ -190,27 +190,6 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
                                         />
                                     )}
 
-                                    <FormField
-                                        control={form.control}
-                                        name="customInstructions"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                            <FormLabel>Custom Instructions (Optional)</FormLabel>
-                                            <FormControl>
-                                                <Textarea
-                                                placeholder="e.g., 'Focus only on the Math section' or 'Find harder practice questions for Organic Chemistry'"
-                                                className="min-h-[100px]"
-                                                {...field}
-                                                />
-                                            </FormControl>
-                                            <FormDescription>
-                                                Tell the AI your specific goals or what to focus on.
-                                            </FormDescription>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
                                     <div className="flex flex-col items-center space-y-4">
                                         <FormField
                                             control={form.control}
@@ -329,6 +308,27 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
                                             />
                                         )}
                                     </div>
+                                    
+                                    <FormField
+                                        control={form.control}
+                                        name="customInstructions"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                            <FormLabel>Custom Instructions (Optional)</FormLabel>
+                                            <FormControl>
+                                                <Textarea
+                                                placeholder="e.g., 'Focus only on the Math section' or 'Find harder practice questions for Organic Chemistry'"
+                                                className="min-h-[100px]"
+                                                {...field}
+                                                />
+                                            </FormControl>
+                                            <FormDescription>
+                                                Tell the AI your specific goals or what to focus on.
+                                            </FormDescription>
+                                            <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
 
                                     <FormField
                                         control={form.control}

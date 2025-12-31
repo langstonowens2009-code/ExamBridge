@@ -23,9 +23,9 @@ export function HeroSection({ onStartJourney }: HeroSectionProps) {
                     priority
                 />
             )}
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-transparent" />
             <div className="relative z-10 p-4 max-w-4xl mx-auto animate-in fade-in-50 duration-700">
-                <h1 className="text-4xl md:text-6xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-white to-purple-300">
+                <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-white to-purple-300">
                     Master Your Exams. Powered by AI.
                 </h1>
                 <p className="mt-4 text-lg md:text-xl text-white/80">

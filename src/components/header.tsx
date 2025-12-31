@@ -19,7 +19,7 @@ export function Header() {
   const { user, loading, signOut } = useAuth();
 
   return (
-    <header className="px-4 lg:px-6 h-16 flex items-center border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+    <header className="px-4 lg:px-6 h-16 flex items-center border-b border-border/40 bg-background/5 backdrop-blur-md sticky top-0 z-50">
       <Link href="/" className="flex items-center justify-center gap-2" prefetch={false}>
         <GraduationCap className="h-6 w-6 text-primary" />
         <span className="text-lg font-bold">ExamBridge</span>
@@ -70,7 +70,7 @@ export function Header() {
             <Button variant="ghost" asChild>
               <Link href="/login">Log In</Link>
             </Button>
-            <Button variant="outline" asChild>
+            <Button asChild className="hover:scale-105 transition-transform">
               <Link href="/signup">Sign Up</Link>
             </Button>
           </>

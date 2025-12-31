@@ -24,10 +24,13 @@ export const analyzeSyllabusAndMatchResourcesFlow = ai.defineFlow(
       prompt: `You are an expert curriculum researcher. Your job is to find the syllabus topics for a given course.
                Course details: ${contentToProcess}.
                Extract the main topics as a raw text list. Do not include introductory text or markdown.`,
-      config: { tools: [{ googleSearch: {} }] }
+      model: 'googleai/gemini-pro',
+      config: {
+        tools: [{ tool: 'googleSearch' }],
+      }
     });
 
-    const rawData = String(research.text);
+    const rawData = research.text;
     console.log("Raw research data:", rawData);
 
     if (!rawData || rawData.length < 20) {
@@ -41,20 +44,27 @@ export const analyzeSyllabusAndMatchResourcesFlow = ai.defineFlow(
                Topics: "${rawData}"
 
                Return your response as a valid JSON array. Do not include any introductory text or markdown code blocks. Output ONLY the raw JSON object.`,
-      output: { schema: z.array(StudyPathModuleSchema) },
+      model: 'googleai/gemini-pro',
+      output: { 
+        schema: z.array(StudyPathModuleSchema),
+      },
     });
     
-    const output = architect.output || [];
+    const output = architect.output;
     
     // Clean up potential markdown in the AI output
-    if (typeof output === 'string') {
+    if (!output) {
+      const textOutput = architect.text;
+      if (textOutput) {
         try {
-            const cleanedString = (output as string).replace(/```json|```/g, '').trim();
-            return JSON.parse(cleanedString);
+          const cleanedString = textOutput.replace(/```json|```/g, '').trim();
+          return JSON.parse(cleanedString);
         } catch (e) {
-            console.error("Failed to parse architect output:", e);
-            return [];
+          console.error("Failed to parse architect text output:", e);
+          return [];
         }
+      }
+      return [];
     }
 
     return output;

@@ -3,6 +3,7 @@ import { GraduationCap } from 'lucide-react';
 import { Button } from './ui/button';
 import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { LoginModal } from './login-modal';
+import { SignupModal } from './signup-modal';
 
 export function Header() {
   return (
@@ -24,7 +25,12 @@ export function Header() {
           </DialogTrigger>
           <LoginModal />
         </Dialog>
-        <Button>Sign Up</Button>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button>Sign Up</Button>
+          </DialogTrigger>
+          <SignupModal />
+        </Dialog>
       </nav>
     </header>
   );

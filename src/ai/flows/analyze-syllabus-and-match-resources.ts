@@ -4,7 +4,8 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { StudyPathModuleSchema } from '../schemas/study-path';
 
-// Local constant to bypass the unreliable googleSearch tool for common exams.
+// Local constant to bypass any AI analysis of syllabus content.
+// The AI's only job is to find resources for these predefined topics.
 const SYLLABUS_LOOKUP: Record<string, string> = {
     'SAT': 'Evidence-Based Reading and Writing, Math (Heart of Algebra, Problem Solving and Data Analysis, Passport to Advanced Math)',
     'ACT': 'English, Math, Reading, Science, Writing',
@@ -24,19 +25,21 @@ const analyzeSyllabusAndMatchResourcesFlow = ai.defineFlow(
     name: 'analyzeSyllabusAndMatchResources',
     inputSchema: z.object({
         examType: z.string(),
-        inputType: z.string(),
+        // inputType, syllabusText, and originalUrl are no longer used but kept for schema compatibility with the front-end.
+        inputType: z.string(), 
         syllabusText: z.string().optional(),
         originalUrl: z.string().optional(),
     }),
     outputSchema: z.array(StudyPathModuleSchema),
   },
   async (input) => {
-    // Determine the content: Prioritize the SYLLABUS_LOOKUP. Fallback to user text.
-    const examSyllabus = SYLLABUS_LOOKUP[input.examType] || input.syllabusText || '';
+    // This flow now *only* uses the examType to look up the syllabus.
+    // It completely ignores user-provided text or URLs.
+    const examSyllabus = SYLLABUS_LOOKUP[input.examType] || '';
     
-    // If no syllabus is found, return empty.
+    // If no syllabus is found for the exam type, return empty.
     if (!examSyllabus) {
-        console.log("No syllabus found from lookup or direct input.");
+        console.log(`No syllabus found in SYLLABUS_LOOKUP for exam type: ${input.examType}`);
         return [];
     }
 

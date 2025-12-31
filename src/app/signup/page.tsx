@@ -76,6 +76,9 @@ export default function SignupPage() {
         case 'auth/invalid-email':
           description = "Please enter a valid email address.";
           break;
+        case 'auth/operation-not-allowed':
+          description = "Email/Password sign-up is not enabled. Please contact support.";
+          break;
       }
 
       toast({

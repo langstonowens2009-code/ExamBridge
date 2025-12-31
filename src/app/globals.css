@@ -4,25 +4,25 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%; /* #f7fafc - Soft Mint-White */
-    --foreground: 165 80% 16%; /* #064e3b - Charcoal Green */
-    --card: 0 0% 100%;
-    --card-foreground: 165 80% 16%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 165 80% 16%;
+    --background: 220 9% 10%; /* #17191c - Deep Slate Grey */
+    --foreground: 210 40% 98%; /* #f7fafc - Off-white */
+    --card: 220 9% 16%; /* #25282c - Medium-dark Grey */
+    --card-foreground: 210 40% 98%;
+    --popover: 240 1% 4%;
+    --popover-foreground: 210 40% 98%;
     --primary: 160 84% 39%; /* #10b981 - Emerald Green */
     --primary-foreground: 210 40% 98%;
-    --secondary: 220 13% 91%; /* #e5e7eb */
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 220 9% 95%; /* #f1f2f4 */
-    --muted-foreground: 220 9% 45%; /* #6b7280 */
-    --accent: 220 9% 95%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%; /* #94a3b8 - Cool Grey */
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 158 65% 85%; /* border-emerald-100 */
-    --input: 220 13% 96%; /* #f9fafb */
-    --ring: 160 84% 39%; /* Emerald Green */
+    --border: 217.2 32.6% 17.5%;
+    --input: 220 9% 11%; /* #16181b - Sunken Grey */
+    --ring: 160 84% 39%;
     --radius: 0.5rem;
   }
 

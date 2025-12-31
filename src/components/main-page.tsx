@@ -157,7 +157,7 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
                     )}
                 </AccordionTrigger>
                 <AccordionContent>
-                    <Card className="w-full mt-4 shadow-sm bg-card border border-border rounded-lg">
+                    <Card className="w-full mt-4 shadow-sm bg-card border border-primary/20 rounded-lg">
                         <CardContent className="p-6">
                             <Form {...form}>
                                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -177,7 +177,7 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
                                             <FormItem>
                                                 <FormLabel className="sr-only">Resource URL</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="https://www.paid-course.com" {...field} className="h-12 text-base bg-secondary" />
+                                                    <Input placeholder="https://www.paid-course.com" {...field} className="h-12 text-base bg-[#F9FAFB] focus:bg-white" />
                                                 </FormControl>
                                                 <FormDescription>
                                                     Enter the URL of a paid study resource, and we'll find free alternatives.
@@ -199,7 +199,7 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
 Unit 1: Algebra Basics
 Unit 2: Geometry Fundamentals
 Unit 3: Advanced Calculus"
-                                                className="min-h-[150px] text-base bg-secondary"
+                                                className="min-h-[150px] text-base bg-[#F9FAFB] focus:bg-white"
                                                 {...field}
                                                 />
                                             </FormControl>
@@ -234,7 +234,7 @@ Unit 3: Advanced Calculus"
                                                                             variant="outline"
                                                                             role="combobox"
                                                                             className={cn(
-                                                                                "w-full justify-between h-12 text-base",
+                                                                                "w-full justify-between h-12 text-base bg-[#F9FAFB]",
                                                                                 !field.value && "text-muted-foreground"
                                                                             )}
                                                                         >
@@ -293,7 +293,7 @@ Unit 3: Advanced Calculus"
                                                                                 variant="outline"
                                                                                 role="combobox"
                                                                                 className={cn(
-                                                                                    "w-full justify-between h-12 text-base",
+                                                                                    "w-full justify-between h-12 text-base bg-[#F9FAFB]",
                                                                                     !field.value && "text-muted-foreground"
                                                                                 )}
                                                                             >
@@ -353,7 +353,7 @@ Unit 3: Advanced Calculus"
                                                     <Button
                                                     variant={"outline"}
                                                     className={cn(
-                                                        "w-full pl-3 text-left font-normal h-12 text-base",
+                                                        "w-full pl-3 text-left font-normal h-12 text-base bg-[#F9FAFB]",
                                                         !field.value && "text-muted-foreground"
                                                     )}
                                                     >
@@ -392,7 +392,7 @@ Unit 3: Advanced Calculus"
                                             <FormControl>
                                                 <Textarea
                                                 placeholder="e.g., 'Focus only on the Math section' or 'Find harder practice questions for Organic Chemistry'"
-                                                className="min-h-[100px] bg-secondary"
+                                                className="min-h-[100px] bg-[#F9FAFB] focus:bg-white"
                                                 {...field}
                                                 />
                                             </FormControl>

@@ -4,10 +4,10 @@
 
 @layer base {
   :root {
-    --background: 220 13% 96%; /* #f5f5f7 - Soft Greyish-White */
-    --foreground: 222.2 47.4% 11.2%; /* #0f172a - Deep Charcoal */
-    --card: 0 0% 100%; /* #ffffff - White */
-    --card-foreground: 222.2 47.4% 11.2%;
+    --background: 220 13% 96%; /* #f5f5f7 - Soft Greyish-White -> Cool Grey #F1F5F9 -> hsl(220, 16%, 97%) */
+    --foreground: 215 28% 27%; /* #334155 - Charcoal Slate */
+    --card: 150 14% 94%; /* #ECF2F0 - Light Sage Grey */
+    --card-foreground: 215 28% 27%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 47.4% 11.2%;
     --primary: 160 84% 39%; /* #10b981 - Emerald Green */
@@ -15,18 +15,19 @@
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%; /* #64748b - Sage Green */
-    --accent: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%; /* #64748b - Slate Green */
+    --accent: 145 74% 90%; /* #D1FAE5 - Soft Mint Green */
     --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%; /* Light grey */
-    --ring: 160 84% 39%;
+    --border: 151 77% 83%; /* #A7F3D0 - Sage Border */
+    --input: 151 77% 83%; /* Sage border for inputs */
+    --ring: 160 84% 39%; /* Emerald Green for focus ring */
     --radius: 0.5rem;
   }
 
   .dark {
+    /* This app is light-theme only. Dark theme variables are not used but kept for completeness. */
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
     --card: 222.2 84% 4.9%;
@@ -55,7 +56,6 @@
   }
   body {
     @apply bg-background text-foreground;
-    background-image: radial-gradient(circle at center, hsl(60 100% 90% / 0.05), transparent 60%);
   }
 }
 

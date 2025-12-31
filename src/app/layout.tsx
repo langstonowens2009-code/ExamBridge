@@ -2,11 +2,10 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/context/AuthContext';
-import { Header } from '@/components/header';
 
 export const metadata: Metadata = {
-  title: 'ExamBridge',
-  description: 'Map paid study resources to high-quality free alternatives.',
+  title: 'Acely',
+  description: 'Your AI-powered study partner.',
 };
 
 export default function RootLayout({
@@ -23,12 +22,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased bg-background">
         <AuthProvider>
-          <div className="flex flex-col min-h-screen">
-            <Header />
-            <main className="flex-1 container mx-auto p-4 md:p-8">
-              {children}
-            </main>
-          </div>
+          {children}
           <Toaster />
         </AuthProvider>
       </body>

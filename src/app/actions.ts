@@ -27,8 +27,15 @@ export async function generateStudyPathAction(data: { originalUrl: string, examT
         return { success: false, error: "Could not find any modules or resources for this URL. Please try another." };
     }
     return { success: true, data: studyPath };
-  } catch (error) {
-    console.error("Error in generateStudyPathAction:", error);
+  } catch (error: any) {
+    // Detailed logging as requested
+    console.error("Error in generateStudyPathAction:", {
+      status: error.status,
+      reason: error.reason,
+      message: error.message,
+      stack: error.stack,
+    });
+
     // This is a user-facing error. Be careful not to leak implementation details.
     return { success: false, error: "An unexpected error occurred while analyzing the syllabus. The AI may be unavailable." };
   }

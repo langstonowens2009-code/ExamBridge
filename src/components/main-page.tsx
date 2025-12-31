@@ -94,7 +94,7 @@ export function MainPage() {
                                         <FormItem>
                                             <FormLabel className="sr-only">Resource URL</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="https://www.paid-course.com/sat-prep" {...field} className="h-12 text-base" />
+                                                <Input placeholder="https://www.paid-course.com" {...field} className="h-12 text-base" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

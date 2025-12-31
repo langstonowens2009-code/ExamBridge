@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, setPersistence, browserSessionPersistence } from 'firebase/auth';
 import { auth } from '@/firebase/auth';
 import Image from 'next/image';
 
@@ -42,6 +42,7 @@ export default function LoginPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
+      await setPersistence(auth, browserSessionPersistence);
       await signInWithEmailAndPassword(auth, values.email, values.password);
       router.push('/');
       router.refresh();

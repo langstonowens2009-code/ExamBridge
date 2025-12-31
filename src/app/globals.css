@@ -70,3 +70,31 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+  }
+  .no-print {
+    display: none;
+  }
+  .printable-area {
+    padding: 2rem;
+  }
+  .printable-area h2, .printable-area p {
+    color: #000;
+  }
+  .printable-area .card {
+    border: 1px solid #ccc;
+    -webkit-print-color-adjust: exact; 
+    print-color-adjust: exact;
+    break-inside: avoid;
+  }
+  .printable-area .card-header, .printable-area .card-content, .printable-area .card-footer {
+     color: #000;
+  }
+   .printable-area .grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+   }
+}

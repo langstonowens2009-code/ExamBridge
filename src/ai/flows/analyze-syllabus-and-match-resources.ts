@@ -38,13 +38,13 @@ const researcherPrompt = ai.definePrompt({
   name: 'syllabusResearcher',
   input: { schema: syllabusAnalysisInputSchema },
   tools: ['googleSearch'],
-  model: 'gemini-1.5-flash',
+  model: 'gemini-pro',
   prompt: `
     You are a Research Assistant.
     Your goal is to find information about the topics covered in a given exam syllabus.
-    The user is studying for the: ${'{{examType}}'}.
-    Here is the general syllabus: ${'{{syllabusText}}'}.
-    If available, here is content from a specific paid resource they are using: ${'{{websiteContent}}'}.
+    The user is studying for the: {{examType}}.
+    Here is the general syllabus: {{syllabusText}}.
+    If available, here is content from a specific paid resource they are using: {{websiteContent}}.
     
     Based on all of this, provide a detailed, unstructured text of the key topics, concepts, and areas of study.
     Do not format as JSON. Just return the raw text information.
@@ -59,10 +59,10 @@ const architectPrompt = ai.definePrompt({
   prompt: `
     You are an Elite Academic Tutor.
     Your task is to create a structured study plan with links to free, high-quality resources.
-    The study plan is for the ${'{{examType}}'} exam.
+    The study plan is for the {{examType}} exam.
     
     Here is the raw data on the syllabus topics:
-    ${'{{context}}'}
+    {{context}}
     
     From this data, create a study plan. For each topic, provide a concise one-sentence description and a link to a helpful free resource (like Khan Academy, a YouTube video, or a reputable educational website).
     

@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type { StudyPathModule } from '@/ai/flows/analyze-syllabus-and-match-resources';
+import type { StudyPathModule } from '@/ai/schemas/study-path';
 import { useToast } from '@/hooks/use-toast';
 
 interface StudyPathDashboardProps {

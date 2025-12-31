@@ -30,7 +30,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { EXAM_CATEGORIES } from '@/lib/constants';
 import { generateStudyPathAction } from '@/app/actions';
-import type { StudyPathModule } from '@/ai/flows/analyze-syllabus-and-match-resources';
+import type { StudyPathModule } from '@/ai/schemas/study-path';
 import { StudyPathDashboard } from './study-path-dashboard';
 
 const formSchema = z.discriminatedUnion('inputType', [

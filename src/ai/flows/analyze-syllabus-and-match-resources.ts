@@ -58,7 +58,7 @@ const formatStudyPathPrompt = ai.definePrompt({
 Syllabus Topics:
 {{{syllabusTopics}}}
 
-Return a JSON string representing an array of objects. Each object must contain 'topic', 'link', and 'description' keys.
+Your response MUST be a valid JSON string that can be parsed directly. The string should represent an array of objects. Do not wrap the JSON string in markdown backticks or any other text. Each object must contain 'topic', 'link', and 'description' keys.
 Example format:
 [
   {
@@ -90,6 +90,7 @@ const analyzeSyllabusAndMatchResourcesFlow = ai.defineFlow(
       console.log("Step 1 failed: No syllabus topics found.");
       return [];
     }
+    console.log("Step 1 Success: Found raw topics:", rawSyllabusTopics);
 
     // Step 2: Pass the raw text to the formatting prompt.
     const { text: jsonString } = await formatStudyPathPrompt({
@@ -101,15 +102,17 @@ const analyzeSyllabusAndMatchResourcesFlow = ai.defineFlow(
       console.log("Step 2 failed: AI did not return a JSON string.");
       return [];
     }
+    console.log("Step 2 Success: Received JSON string:", jsonString);
 
     try {
       // The model should return a JSON string, so we parse it.
       const parsedOutput = JSON.parse(jsonString);
       // Validate the parsed output against the schema to be safe.
       return AnalyzeSyllabusOutputSchema.parse(parsedOutput);
-    } catch (e) {
-      console.error("Failed to parse JSON from AI response:", e);
-      // If parsing fails, return an empty array or handle as an error.
+    } catch (e: any) {
+      console.error("Failed to parse JSON from AI response:", e.message);
+      console.error("Malformed JSON string:", jsonString);
+      // If parsing fails, return an empty array which will trigger a user-facing error.
       return [];
     }
   }

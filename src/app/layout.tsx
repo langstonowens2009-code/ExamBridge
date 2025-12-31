@@ -1,7 +1,7 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from '@/hooks/useAuth';
+import { AuthProvider } from '@/context/AuthContext';
 import { Header } from '@/components/header';
 
 export const metadata: Metadata = {

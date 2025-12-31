@@ -42,7 +42,7 @@ export async function analyzeSyllabusAndMatchResources(
   return analyzeSyllabusAndMatchResourcesFlow(input);
 }
 
-// Step 1: Find Raw Syllabus Topics (only if input is a URL)
+// Step 1: The Researcher - Find Raw Syllabus Topics (only if input is a URL)
 const findSyllabusTopicsPrompt = ai.definePrompt({
   name: 'findSyllabusTopicsPrompt',
   input: {schema: z.object({
@@ -57,7 +57,7 @@ IMPORTANT: Do NOT fetch the content of the URL directly. Instead, use your Googl
 Return only a list of the main topics you find, separated by newlines. Do not include any other information or formatting.`,
 });
 
-// Step 2: Format and Find Resources
+// Step 2: The Architect - Format and Find Resources
 const formatStudyPathPrompt = ai.definePrompt({
   name: 'formatStudyPathPrompt',
   input: {schema: z.object({
@@ -87,33 +87,36 @@ const analyzeSyllabusAndMatchResourcesFlow = ai.defineFlow(
 
     if (input.inputType === 'url') {
       // Step 1: Get raw syllabus topics as plain text from URL.
-      const { text } = await findSyllabusTopicsPrompt({ originalUrl: input.originalUrl, examType: input.examType });
-      rawSyllabusTopics = text;
+      const researcherResponse = await findSyllabusTopicsPrompt({ originalUrl: input.originalUrl, examType: input.examType });
+      rawSyllabusTopics = researcherResponse.text;
+      
       if (!rawSyllabusTopics) {
-        console.log("Step 1 failed: No syllabus topics found for URL.");
-        // UI Fallback: If step 1 fails, we return an empty array, which the frontend will interpret as a failure.
+        console.log("Step 1 (Researcher) failed: No syllabus topics found for URL.");
+        // Return an empty array. The frontend action will handle the specific user-facing error message.
         return [];
       }
-      console.log("Step 1 Success: Found raw topics from URL:", rawSyllabusTopics);
+      console.log("Step 1 (Researcher) Success: Found raw topics from URL:", rawSyllabusTopics);
     } else {
       // Input is already raw text, skip step 1.
       rawSyllabusTopics = input.syllabusText;
-      console.log("Step 1 Skipped: Using provided raw syllabus text.");
+      console.log("Step 1 (Researcher) Skipped: Using provided raw syllabus text.");
     }
 
 
-    // Step 2: Pass the raw text to the formatting prompt.
-    const { output } = await formatStudyPathPrompt({
+    // Step 2: Pass the raw text to the formatting prompt (The Architect).
+    const architectResponse = await formatStudyPathPrompt({
       syllabusTopics: rawSyllabusTopics,
       examType: input.examType,
     });
     
+    const output = architectResponse.output;
+
     if (!output) {
-      console.log("Step 2 failed: AI did not return a valid structured output.");
+      console.log("Step 2 (Architect) failed: AI did not return a valid structured output.");
       return [];
     }
 
-    console.log("Step 2 Success: Formatted study path:", output);
+    console.log("Step 2 (Architect) Success: Formatted study path:", output);
     return output;
   }
 );

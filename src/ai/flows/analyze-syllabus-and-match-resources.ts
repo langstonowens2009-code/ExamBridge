@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import {googleSearch} from '@genkit-ai/google-genai/tools';
 
 const AnalyzeSyllabusInputSchema = z.object({
   originalUrl: z.string().describe('The URL of the paid study resource.'),
@@ -36,7 +37,7 @@ export async function analyzeSyllabusAndMatchResources(
 const findFreeResources = ai.defineTool(
   {
     name: 'findFreeResources',
-    description: 'Finds free alternative resources that match a given topic for a specific exam type.',
+    description: 'Finds free alternative resources that match a given topic for a specific exam type. Only return links to PDFs and videos.',
     inputSchema: z.object({
       topic: z.string().describe('The topic to find free resources for.'),
       examType: z.string().describe('The type of exam the resource is for (e.g., SAT, ACT, USMLE).'),
@@ -46,11 +47,28 @@ const findFreeResources = ai.defineTool(
       description: z.string().describe('A 1-sentence explanation of why this free link is a good substitute.'),
     }),
   },
-  async input => {
-    // Dummy implementation - replace with actual resource finding logic
+  async (input, context) => {
+    const { output } = await ai.generate({
+      prompt: `Find a free PDF or video resource for the topic "${input.topic}" for the exam "${input.examType}".`,
+      tools: [googleSearch],
+      config: {
+        toolChoice: 'tool',
+      }
+    });
+    
+    // In a real implementation we would parse the tool output and return a structured response.
+    // For now we will just return a placeholder.
+    if(output.results[0]?.result.url) {
+      return {
+        link: output.results[0]?.result.url,
+        description: `This free resource covers the topic ${input.topic} for the ${input.examType} exam.`,
+      };
+    }
+    
+    // fallback
     return {
-      link: `https://example.com/free-resource-for-${input.topic.replace(/ /g, '-')}`,
-      description: `This free resource covers the topic ${input.topic} for the ${input.examType} exam.`, //Fixed: Correctly reference input.topic and input.examType
+      link: `https://www.google.com/search?q=free+${input.examType}+${input.topic}+pdf+video`,
+      description: `This free resource covers the topic ${input.topic} for the ${input.examType} exam.`,
     };
   }
 );

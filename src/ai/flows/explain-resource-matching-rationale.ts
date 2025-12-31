@@ -8,26 +8,12 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-
-const ExplainResourceMatchingRationaleInputSchema = z.object({
-  topic: z.string().describe('The topic from the paid resource.'),
-  resourceLink: z.string().describe('The link to the free resource.'),
-});
-export type ExplainResourceMatchingRationaleInput = z.infer<
-  typeof ExplainResourceMatchingRationaleInputSchema
->;
-
-const ExplainResourceMatchingRationaleOutputSchema = z.object({
-  rationale: z
-    .string()
-    .describe(
-      'A one-sentence explanation of why the free resource is a good substitute for the topic in the paid resource.'
-    ),
-});
-export type ExplainResourceMatchingRationaleOutput = z.infer<
-  typeof ExplainResourceMatchingRationaleOutputSchema
->;
+import {
+  ExplainResourceMatchingRationaleInputSchema,
+  ExplainResourceMatchingRationaleOutputSchema,
+  type ExplainResourceMatchingRationaleInput,
+  type ExplainResourceMatchingRationaleOutput,
+} from '@/ai/schemas/study-path';
 
 export async function explainResourceMatchingRationale(
   input: ExplainResourceMatchingRationaleInput

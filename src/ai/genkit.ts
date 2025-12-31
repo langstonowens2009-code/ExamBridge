@@ -1,16 +1,13 @@
-import { genkit } from 'genkit';
-import { googleAI } from '@genkit-ai/google-genai';
+'use server';
 
-/**
- * We use a clean initialization here. 
- * If you are using Google AI Studio (API Key), do NOT add a 'location'.
- * If you see red lines, it's often because 'location' is only for Vertex AI.
- */
+import {genkit} from 'genkit';
+import {googleAI} from '@genkit-ai/google-genai';
+
 export const ai = genkit({
   plugins: [
-    googleAI({ location: 'global', apiVersion: 'v1' }) 
+    googleAI({
+      location: 'global',
+      apiVersion: 'v1',
+    }),
   ],
-  // Using a string ID here is safer than an imported object 
-  // to avoid 'Module not found' or 'Type' errors.
-  model: 'googleai/gemini-2.0-flash', 
 });

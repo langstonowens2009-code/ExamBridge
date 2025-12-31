@@ -38,6 +38,7 @@ const researcherPrompt = ai.definePrompt({
   name: 'syllabusResearcher',
   input: { schema: syllabusAnalysisInputSchema },
   tools: ['googleSearch'],
+  model: 'gemini-1.5-flash',
   prompt: `
     You are a Research Assistant.
     Your goal is to find information about the topics covered in a given exam syllabus.
@@ -54,6 +55,7 @@ const architectPrompt = ai.definePrompt({
   name: 'studyPlanArchitect',
   input: { schema: z.object({ examType: z.string(), context: z.string() }) },
   output: { schema: studyPathOutputSchema },
+  model: 'gemini-1.5-flash',
   prompt: `
     You are an Elite Academic Tutor.
     Your task is to create a structured study plan with links to free, high-quality resources.

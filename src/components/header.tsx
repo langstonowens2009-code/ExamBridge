@@ -17,6 +17,7 @@ import { Skeleton } from './ui/skeleton';
 
 export function Header() {
   const { user, loading, signOut } = useAuth();
+  const firstName = user?.displayName?.split(' ')[0];
 
   return (
     <header className="px-4 lg:px-6 h-16 flex items-center border-b border-white/10 bg-gray-200/30 backdrop-blur-md sticky top-0 z-50">
@@ -29,16 +30,14 @@ export function Header() {
           <Skeleton className="h-8 w-24" />
         ) : user ? (
           <>
-            <Button variant="ghost" className="text-foreground hover:text-foreground/90" asChild>
-                <Link href="/dashboard">Dashboard</Link>
-            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8">
+                <Button variant="ghost" className="flex items-center gap-2">
+                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user.photoURL || ''} alt={user.displayName || user.email || ''} />
                     <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
                   </Avatar>
+                  {firstName && <span className="hidden sm:inline-block">{firstName}</span>}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>

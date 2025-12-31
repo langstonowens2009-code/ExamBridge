@@ -4,70 +4,70 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { StudyPathModuleSchema } from '../schemas/study-path';
 
-export const analyzeSyllabusAndMatchResourcesFlow = ai.defineFlow(
+// Local constant to bypass the unreliable googleSearch tool for common exams.
+const SYLLABUS_LOOKUP: Record<string, string> = {
+    'SAT': 'Evidence-Based Reading and Writing, Math (Heart of Algebra, Problem Solving and Data Analysis, Passport to Advanced Math)',
+    'ACT': 'English, Math, Reading, Science, Writing',
+    'AP Classes': 'Depends on the specific AP subject (e.g., AP Calculus AB: Limits, Derivatives, Integrals; AP US History: Colonial America, The Revolution, Civil War)',
+    'LSAT': 'Reading Comprehension, Analytical Reasoning, Logical Reasoning',
+    'MCAT': 'Chemical and Physical Foundations of Biological Systems; Critical Analysis and Reasoning Skills; Biological and Biochemical Foundations of Living Systems; Psychological, Social, and Biological Foundations of Behavior',
+    'GMAT': 'Quantitative Reasoning, Verbal Reasoning, Integrated Reasoning, Analytical Writing Assessment',
+    'USMLE (Steps 1-3)': 'Step 1: Basic Sciences (Anatomy, Physiology, Biochemistry), Step 2: Clinical Knowledge (Internal Medicine, Surgery, Pediatrics), Step 3: Clinical Management',
+    'COMLEX-USA': 'Osteopathic Principles and Practice, Medical Knowledge, Patient Care',
+    'NCLEX-RN/PN': 'Safe and Effective Care Environment, Health Promotion and Maintenance, Psychosocial Integrity, Physiological Integrity',
+    'BAR Exam': 'Constitutional Law, Contracts, Criminal Law and Procedure, Evidence, Real Property, Torts, Civil Procedure',
+};
+
+
+const analyzeSyllabusAndMatchResourcesFlow = ai.defineFlow(
   {
     name: 'analyzeSyllabusAndMatchResources',
-    inputSchema: z.any(),
+    inputSchema: z.object({
+        examType: z.string(),
+        inputType: z.string(),
+        syllabusText: z.string().optional(),
+        originalUrl: z.string().optional(),
+    }),
     outputSchema: z.array(StudyPathModuleSchema),
   },
   async (input) => {
-    // Determine the content: Use user text if provided, otherwise search based on URL.
-    const isTextBased = input.inputType === 'text' && input.syllabusText;
-    const contentToProcess = isTextBased 
-      ? input.syllabusText
-      : `Find the syllabus or table of contents for the course at this URL: ${input.originalUrl}`;
+    // Determine the content: Prioritize the SYLLABUS_LOOKUP. Fallback to user text.
+    const examSyllabus = SYLLABUS_LOOKUP[input.examType] || input.syllabusText || '';
     
-    const examType = (input.examType || 'SAT').toUpperCase();
-
-    // STEP 1: RESEARCHER - Get raw syllabus topics
-    const researchResponse = await ai.generate({
-      prompt: `You are an expert curriculum researcher. Your job is to find the syllabus topics for a given course.
-               Course details: ${contentToProcess}.
-               Extract the main topics as a raw text list. Do not include introductory text or markdown. Just output the list of topics.`,
-      model: 'googleai/gemini-pro',
-      config: {
-        tools: [{ tool: 'googleSearch' }],
-      }
-    });
-
-    const rawData = researchResponse.text;
-    console.log("--- Raw Data from Researcher ---");
-    console.log(rawData);
-    console.log("--------------------------------");
-
-    // If the researcher returns no meaningful data, exit early.
-    if (!rawData || rawData.length < 20) {
+    // If no syllabus is found, return empty.
+    if (!examSyllabus) {
+        console.log("No syllabus found from lookup or direct input.");
         return [];
     }
 
-    // STEP 2: ARCHITECT - Format into UI Cards and find resources
-    const architectResponse = await ai.generate({
-      prompt: `You are a curriculum architect. Take this list of topics and find the best free, high-quality study resource (like Khan Academy, Coursera, YouTube, or .edu sites) on the web for each one, tailored for the ${examType} exam.
+    // The single, reliable AI call.
+    const response = await ai.generate({
+      prompt: `You are an Elite Academic Tutor. Your task is to create a study plan based on the provided syllabus topics.
+               For each topic, provide a brief, one-sentence description and a link to a high-quality, free study resource (like Khan Academy, Coursera, YouTube, or .edu sites).
                
-               Topics: "${rawData}"
+               Syllabus Topics: "${examSyllabus}"
 
-               Return your response as a valid JSON array. Do not include any introductory text or markdown code blocks. Output ONLY the raw JSON object.`,
+               Return your response as a valid JSON array. Do not include any introductory text or markdown code blocks. Output ONLY the raw JSON array.`,
       model: 'googleai/gemini-pro',
       output: { 
         schema: z.array(StudyPathModuleSchema),
       },
     });
     
-    const output = architectResponse.output;
+    const output = response.output;
     
-    // Clean up potential markdown in the AI output
+    // Handle cases where the model might still wrap the output in markdown
     if (!output) {
-      const textOutput = architectResponse.text;
+      const textOutput = response.text;
       if (textOutput) {
         try {
-          // Robust parsing: remove markdown and trim whitespace
           const cleanedString = textOutput.replace(/```json|```/g, '').trim();
-          console.log("--- Cleaned Architect String for Parsing ---");
+          console.log("--- Cleaned AI String for Parsing ---");
           console.log(cleanedString);
-          console.log("------------------------------------------");
+          console.log("-------------------------------------");
           return JSON.parse(cleanedString);
         } catch (e) {
-          console.error("Failed to parse architect text output:", e);
+          console.error("Failed to parse AI text output:", e);
           return [];
         }
       }
@@ -78,6 +78,6 @@ export const analyzeSyllabusAndMatchResourcesFlow = ai.defineFlow(
   }
 );
 
-export async function analyzeSyllabusAndMatchResources(input: any) {
+export async function analyzeSyllabusAndMatchResources(input: z.infer<typeof analyzeSyllabusAndMatchResourcesFlow.inputSchema>) {
   return await analyzeSyllabusAndMatchResourcesFlow(input);
 }

@@ -46,7 +46,7 @@ const fallbackResult = [{
 }];
 
 /**
- * Analyzes a syllabus (either from a knowledge base or custom text) and finds free learning resources using competitive analysis.
+ * Analyzes a syllabus (either from a knowledge base or custom text) and finds free learning resources.
  * This function uses a two-step AI process:
  * 1. Researcher: Finds what paid study companies offer, then finds free equivalents.
  * 2. Architect: Formats the raw findings into a structured JSON output.

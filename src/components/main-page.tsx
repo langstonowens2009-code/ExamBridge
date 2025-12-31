@@ -31,6 +31,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 const formSchema = z.discriminatedUnion('inputType', [
   z.object({
@@ -54,7 +55,8 @@ export function MainPage() {
   const [inputType, setInputType] = useState<'url' | 'text'>('url');
   const [showApSearch, setShowApSearch] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -68,19 +70,30 @@ export function MainPage() {
   const handleSwitchChange = (checked: boolean) => {
     const newInputType = checked ? 'text' : 'url';
     setInputType(newInputType);
-    form.setValue('inputType', newInputType);
-    if (newInputType === 'url') {
-      form.reset({ ...form.getValues(), inputType: 'url', syllabusText: undefined });
-    } else {
-      form.reset({ ...form.getValues(), inputType: 'text', originalUrl: '' });
-    }
+    const currentValues = form.getValues();
+    form.reset({
+      ...currentValues,
+      inputType: newInputType,
+      originalUrl: newInputType === 'text' ? '' : currentValues.originalUrl,
+      syllabusText: newInputType === 'url' ? undefined : currentValues.syllabusText,
+    });
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!user) {
+        toast({
+            title: 'Please log in',
+            description: 'You need to be logged in to create a study plan.',
+            variant: 'destructive',
+        });
+        router.push('/login');
+        return;
+    }
+
     setIsLoading(true);
     setStudyPath(null);
 
-    const idToken = await user?.getIdToken();
+    const idToken = await user.getIdToken();
     const result = await generateStudyPathAction(values, idToken);
 
     setIsLoading(false);
@@ -108,6 +121,8 @@ export function MainPage() {
   if (studyPath) {
     return <StudyPathDashboard studyPath={studyPath} onReset={() => setStudyPath(null)} />;
   }
+  
+  const isButtonDisabled = isLoading || authLoading;
 
   return (
     <div className="w-full max-w-4xl flex flex-col items-center text-center animate-in fade-in-50 duration-500">
@@ -293,7 +308,7 @@ export function MainPage() {
                             name="testDate"
                             render={({ field }) => (
                                 <FormItem className="flex flex-col items-start">
-                                <FormLabel className="mb-2">When is your test date?</FormLabel>
+                                <FormLabel className="mb-2 text-left">When is your test date? (Optional)</FormLabel>
                                 <Popover>
                                     <PopoverTrigger asChild>
                                     <FormControl>
@@ -331,7 +346,7 @@ export function MainPage() {
                         />
 
 
-                        <Button type="submit" size="lg" className="w-full h-12 text-lg font-semibold" disabled={isLoading}>
+                        <Button type="submit" size="lg" className="w-full h-12 text-lg font-semibold" disabled={isButtonDisabled}>
                             {isLoading ? (
                                 <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> AI Analyzing Syllabus...</>
                             ) : (

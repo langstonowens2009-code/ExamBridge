@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, BookOpen, ExternalLink, File, MoreVertical, RefreshCw, ChevronDown } from 'lucide-react';
+import { ArrowRight, BookOpen, ExternalLink, File, MoreVertical, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -12,7 +12,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { WeeklyStudyPath } from '@/ai/schemas/study-path';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 
 interface StudyPathDashboardProps {
@@ -22,7 +21,6 @@ interface StudyPathDashboardProps {
 
 export function StudyPathDashboard({ studyPath, onReset }: StudyPathDashboardProps) {
   const { toast } = useToast();
-  const { user } = useAuth();
 
   const handlePrint = () => {
     window.print();
@@ -35,13 +33,6 @@ export function StudyPathDashboard({ studyPath, onReset }: StudyPathDashboardPro
     });
   }
 
-  const handleSaveToDashboard = () => {
-      toast({
-        title: 'Saved!',
-        description: 'Your study plan has been saved to your dashboard.',
-      });
-  }
-
   return (
     <div className="w-full animate-in fade-in-50 duration-500 printable-area">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 no-print">
@@ -52,10 +43,6 @@ export function StudyPathDashboard({ studyPath, onReset }: StudyPathDashboardPro
         <div className="flex gap-2 mt-4 md:mt-0">
             <Button variant="outline" onClick={onReset}><RefreshCw className="mr-2 h-4 w-4" /> Start Over</Button>
             
-            {user && (
-                 <Button onClick={handleSaveToDashboard}>Save to Dashboard</Button>
-            )}
-
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon">

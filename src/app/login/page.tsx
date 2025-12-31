@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '@/firebase/auth';
+import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,11 +45,12 @@ export default function LoginPage() {
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
       router.push('/dashboard');
+      router.refresh();
     } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: error.message,
+        description: "Invalid email or password.",
       });
     } finally {
       setIsLoading(false);
@@ -61,11 +63,12 @@ export default function LoginPage() {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
       router.push('/dashboard');
+      router.refresh();
     } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Google Sign-In Failed',
-        description: error.message,
+        description: "Could not sign in with Google. Please try again.",
       });
     } finally {
       setIsGoogleLoading(false);
@@ -73,8 +76,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center py-12">
-      <Card className="w-full max-w-md">
+    <div className="flex items-center justify-center min-h-screen bg-background">
+      <Card className="w-full max-w-md mx-4">
         <CardHeader className="text-center">
           <CardTitle>Log In</CardTitle>
           <CardDescription>Access your study plans</CardDescription>
@@ -119,15 +122,14 @@ export default function LoginPage() {
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+              <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
             </div>
           </div>
           <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
             {isGoogleLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
-              // You might want to add a Google icon here
-              <p>G</p>
+              <Image src="/google.svg" width={20} height={20} alt="Google logo" className="mr-2" />
             )}
             Google
           </Button>

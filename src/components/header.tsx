@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Skeleton } from './ui/skeleton';
 
 export function Header() {
   const { user, loading, signOut } = useAuth();
@@ -25,7 +26,7 @@ export function Header() {
       </Link>
       <nav className="ml-auto flex gap-2 items-center">
         {loading ? (
-          <div className="h-8 w-24 bg-muted/50 rounded animate-pulse" />
+          <Skeleton className="h-8 w-24" />
         ) : user ? (
           <>
             <Button variant="ghost" asChild>

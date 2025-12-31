@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, updateProfile } from 'firebase/auth';
 import { auth } from '@/firebase/auth';
+import Image from 'next/image';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +33,7 @@ export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -43,23 +45,44 @@ export default function SignupPage() {
     try {
       await createUserWithEmailAndPassword(auth, values.email, values.password);
       router.push('/dashboard');
+      router.refresh();
     } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Sign-up Failed',
-        description: error.message,
+        description: error.code === 'auth/email-already-in-use' 
+            ? 'This email is already in use.'
+            : 'An unexpected error occurred.',
       });
     } finally {
       setIsLoading(false);
     }
   }
 
+  async function handleGoogleSignIn() {
+    setIsGoogleLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      router.push('/dashboard');
+      router.refresh();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Google Sign-In Failed',
+        description: "Could not sign in with Google. Please try again.",
+      });
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  }
+
   return (
-    <div className="flex items-center justify-center py-12">
-      <Card className="w-full max-w-md">
+    <div className="flex items-center justify-center min-h-screen bg-background">
+      <Card className="w-full max-w-md mx-4">
         <CardHeader className="text-center">
           <CardTitle>Create an Account</CardTitle>
-          <CardDescription>Save your study plans for later</CardDescription>
+          <CardDescription>Get started with your personalized study plan</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -90,12 +113,28 @@ export default function SignupPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Sign Up
               </Button>
             </form>
           </Form>
+           <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+            </div>
+          </div>
+          <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
+            {isGoogleLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+                <Image src="/google.svg" width={20} height={20} alt="Google logo" className="mr-2" />
+            )}
+            Google
+          </Button>
            <p className="mt-4 text-center text-sm text-muted-foreground">
             Already have an account?{' '}
             <Link href="/login" className="text-primary hover:underline">

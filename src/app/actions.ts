@@ -47,11 +47,11 @@ export async function generateStudyPathAction(data: z.infer<typeof formSchema>, 
   
   try {
     const studyPath = await analyzeSyllabusAndMatchResources(validation.data);
-    if (!studyPath || studyPath.length === 0) {
+    if (!studyPath || studyPath.length === 0 || (studyPath[0]?.modules[0]?.topic === 'Search Timed Out')) {
         if (validation.data.inputType === 'url') {
-            return { success: false, error: "I couldn't reach that site's syllabus. Please try pasting the syllabus text manually so I can build your plan." };
+            return { success: false, error: "I couldn't build a plan from that site. Please try pasting the syllabus text manually so I can build your plan." };
         }
-        return { success: false, error: "Could not find any modules or resources for the provided syllabus. Please try again." };
+        return { success: false, error: "The AI search timed out. This can happen during peak hours. Please try generating the plan again." };
     }
 
     const userId = await getUserIdFromToken(idToken);

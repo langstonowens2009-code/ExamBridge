@@ -3,11 +3,12 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { getStudyPlansAction } from '@/app/actions';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Loader2, BookOpen } from 'lucide-react';
+import { Loader2, BookOpen, PlusCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { Header } from '@/components/header';
 
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
@@ -31,65 +32,74 @@ export default function DashboardPage() {
         } finally {
           setLoading(false);
         }
+      } else if (!authLoading) {
+        // If user is not logged in and auth is not loading, stop loading.
+        setLoading(false);
       }
     }
-
-    if (!authLoading) {
-      fetchPlans();
-    }
+    fetchPlans();
   }, [user, authLoading]);
 
   if (authLoading || loading) {
     return (
-      <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]">
-        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+      <div className="flex flex-col min-h-screen">
+        <Header />
+        <div className="flex-1 flex justify-center items-center">
+          <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        </div>
       </div>
     );
   }
 
-  if (error) {
-    return <div className="text-center text-destructive">{error}</div>;
-  }
-
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Your Study Plans</h1>
-        <Button asChild>
-          <Link href="/">Create New Plan</Link>
-        </Button>
-      </div>
+    <div className="flex flex-col min-h-screen bg-background">
+      <Header />
+      <main className="flex-1 container mx-auto py-8 px-4 md:px-6">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Your Study Plans</h1>
+          <Button asChild>
+            <Link href="/">Create New Plan</Link>
+          </Button>
+        </div>
 
-      {plans.length === 0 ? (
-        <div className="text-center py-20 bg-card rounded-lg border-dashed border-2">
-          <h2 className="text-2xl font-semibold">No Saved Plans Yet</h2>
-          <p className="text-muted-foreground mt-2">
-            Create a new study plan to see it here.
-          </p>
-        </div>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {plans.map((plan) => (
-            <Card key={plan.id}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3">
-                    <BookOpen className="h-6 w-6 text-primary" />
-                    <span>{plan.examType}</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Created {formatDistanceToNow(plan.createdAt.toDate(), { addSuffix: true })}
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {plan.modules?.length || 0} modules
-                </p>
-                {/* We could add a button to view the plan details */}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+        {error && <div className="text-center text-destructive p-4 bg-destructive/10 rounded-md">{error}</div>}
+
+        {plans.length === 0 && !error ? (
+          <div className="text-center py-20 bg-card rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center">
+            <BookOpen className="h-12 w-12 text-muted-foreground" />
+            <h2 className="mt-6 text-2xl font-semibold">No Saved Plans Yet</h2>
+            <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
+              You haven't created any study plans. Get started by creating your first one!
+            </p>
+            <Button asChild className="mt-6">
+                <Link href="/"><PlusCircle className="mr-2 h-4 w-4"/>Create New Plan</Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {plans.map((plan) => (
+              <Card key={plan.id} className="flex flex-col hover:border-primary/50 transition-colors">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                        <BookOpen className="h-5 w-5" />
+                      </span>
+                      <span>{plan.examType}</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex-grow">
+                   <CardDescription>
+                    Created {formatDistanceToNow(plan.createdAt.toDate(), { addSuffix: true })}
+                  </CardDescription>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {plan.modules?.reduce((acc: number, week: any) => acc + week.modules.length, 0) || 0} total modules
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </main>
     </div>
   );
 }

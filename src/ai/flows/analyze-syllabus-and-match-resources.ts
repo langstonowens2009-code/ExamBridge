@@ -9,6 +9,16 @@ const EXAM_DATA: Record<string, string> = {
   "SAT": "Evidence-Based Reading, Writing and Language, Math (No Calculator), Math (Calculator), Essay (Optional)",
   "ACT": "English, Mathematics, Reading, Science, Writing (Optional)",
   "AP": "Core curriculum mastery for specific AP subject (e.g., Calculus, US History, Biology) and free-response question strategies.",
+  "AP CALCULUS AB": "Limits and Continuity, Differentiation, Integration, Differential Equations",
+  "AP CALCULUS BC": "All AB topics plus Parametric Equations, Polar Coordinates, Vector-Valued Functions, and Series",
+  "AP STATISTICS": "Exploring Data, Sampling and Experimentation, Probability, Statistical Inference",
+  "AP PHYSICS 1": "Kinematics, Dynamics, Circular Motion and Gravitation, Energy, Momentum, Simple Harmonic Motion, Torque and Rotational Motion",
+  "AP CHEMISTRY": "Atomic Structure, Intermolecular Forces, Chemical Reactions, Kinetics, Thermodynamics, Equilibrium",
+  "AP BIOLOGY": "Evolution, Cellular Processes, Genetics, Information Transfer, Ecology",
+  "AP US HISTORY": "American and National Identity; Politics and Power; Work, Exchange, and Technology; Culture and Society; Migration and Settlement; Geography and the Environment; America in the World",
+  "AP WORLD HISTORY": "The Global Tapestry, Networks of Exchange, Land-Based Empires, Transoceanic Interconnections, Revolutions, Consequences of Industrialization, Global Conflict, Cold War and Decolonization, Globalization",
+  "AP ENGLISH LANGUAGE AND COMPOSITION": "Rhetorical Analysis, Argumentation, Synthesis",
+  "AP ENGLISH LITERATURE AND COMPOSITION": "Literary Analysis of prose and poetry",
   "LSAT": "Logical Reasoning, Analytical Reasoning (Logic Games), Reading Comprehension, Unscored Experimental Section, Unscored Writing Sample",
   "MCAT": "Chemical and Physical Foundations of Biological Systems; Critical Analysis and Reading Skills (CARS); Biological and Biochemical Foundations of Living Systems; Psychological, Social, and Biological Foundations of Behavior",
   "GMAT": "Quantitative Reasoning, Verbal Reasoning, Integrated Reasoning, Analytical Writing Assessment",
@@ -32,27 +42,32 @@ const fallbackResult = [{
 }];
 
 /**
- * Analyzes a syllabus (either from a knowledge base or custom text) and finds free learning resources.
+ * Analyzes a syllabus (either from a knowledge base or custom text) and finds free learning resources using competitive analysis.
  * This function uses a two-step AI process:
- * 1. Researcher: Finds relevant topics and resources using a search tool.
+ * 1. Researcher: Finds what paid study companies offer, then finds free equivalents.
  * 2. Architect: Formats the raw findings into a structured JSON output.
  */
 export async function analyzeSyllabusAndMatchResources(
   input: z.infer<typeof syllabusAnalysisInputSchema>
 ): Promise<z.infer<typeof studyPathOutputSchema>> {
   try {
-    const examKey = input.examType.includes('AP') ? 'AP' : input.examType.toUpperCase();
+    const examKey = input.examType.toUpperCase();
     const syllabusContext = EXAM_DATA[examKey] || input.syllabusText || `Core topics for the ${input.examType} exam`;
 
-    // Step 1: The "Researcher" - Use the AI's knowledge and search to find raw information.
+    // Step 1: The "Researcher" - Perform competitive analysis and find free alternatives.
     const researcherResult = await ai.generate({
       model: 'gemini-pro',
       prompt: `
-        You are an expert academic researcher. Based on the following syllabus topics for the ${input.examType}, 
-        find the most important sub-topics and links to the best free learning resources (like YouTube videos from major educational channels, Khan Academy, or official documentation) for 2025 exam prep.
+        You are an expert academic tutor performing competitive analysis.
+        Your goal is to build a free study plan that competes with paid platforms like UWorld, Acely, and Princeton Review for the ${input.examType}.
+
+        First, mentally review what paid test prep sites offer for the topics in the syllabus below.
+        Then, find the best free learning resources (like specific YouTube videos from major educational channels, Khan Academy, or official documentation) that teach those same concepts for 2025 exam prep.
         
         Syllabus Context:
         ${syllabusContext}
+
+        Provide a list of topics and the links to the free resources you found.
       `,
     });
 

@@ -19,17 +19,17 @@ export function Header() {
   const { user, loading, signOut } = useAuth();
 
   return (
-    <header className="px-4 lg:px-6 h-16 flex items-center border-b border-primary/20 bg-[#F8FAFC]/80 backdrop-blur-md sticky top-0 z-50">
+    <header className="px-4 lg:px-6 h-16 flex items-center border-b border-white/10 bg-gray-200/30 backdrop-blur-md sticky top-0 z-50">
       <Link href="/" className="flex items-center justify-center gap-2" prefetch={false}>
         <GraduationCap className="h-6 w-6 text-primary" />
-        <span className="text-lg font-bold text-[#064E3B]">ExamBridge</span>
+        <span className="text-lg font-bold text-foreground">ExamBridge</span>
       </Link>
       <nav className="ml-auto flex gap-2 items-center">
         {loading ? (
           <Skeleton className="h-8 w-24" />
         ) : user ? (
           <>
-            <Button variant="ghost" className="text-[#064E3B] hover:text-[#064E3B]/90" asChild>
+            <Button variant="ghost" className="text-foreground hover:text-foreground/90" asChild>
                 <Link href="/dashboard">Dashboard</Link>
             </Button>
             <DropdownMenu>

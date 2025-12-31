@@ -202,7 +202,7 @@ export function MainPage() {
                                                 {field.value
                                                   ? EXAM_CATEGORIES.find(
                                                       (exam) => exam === field.value
-                                                    )
+                                                    ) || (AP_CLASSES.includes(field.value) ? 'AP Classes' : 'Select Exam Type')
                                                   : "Select Exam Type"}
                                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                               </Button>
@@ -267,7 +267,7 @@ export function MainPage() {
                                               </Button>
                                             </FormControl>
                                           </PopoverTrigger>
-                                          <PopoverContent className="w-full p-0">
+                                          <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[--radix-popover-content-available-height] p-0">
                                             <Command>
                                               <CommandInput placeholder="Search AP Class..." />
                                               <CommandEmpty>No AP class found.</CommandEmpty>

@@ -12,7 +12,7 @@ export function HeroSection({ onStartJourney }: HeroSectionProps) {
     const heroImage = PlaceHolderImages.find(img => img.id === 'hero-background');
 
     return (
-        <section className="relative h-[60vh] min-h-[400px] flex items-center justify-center text-center text-white">
+        <section className="relative h-[60vh] min-h-[400px] flex items-center justify-center text-center text-foreground">
             {heroImage && (
                  <Image
                     src={heroImage.imageUrl}
@@ -23,9 +23,9 @@ export function HeroSection({ onStartJourney }: HeroSectionProps) {
                     priority
                 />
             )}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-white/30 via-white/10 to-transparent" />
             <div className="relative z-10 p-4 max-w-4xl mx-auto animate-in fade-in-50 duration-700">
-                <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight [text-shadow:0_0_15px_hsl(var(--primary)/0.4)]">
+                <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight">
                     Master Your Exams. Powered by AI.
                 </h1>
                 <p className="mt-4 text-lg md:text-xl text-foreground/80">

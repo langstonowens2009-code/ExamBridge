@@ -5,11 +5,11 @@
 @layer base {
   :root {
     --background: 210 40% 98%; /* #f7fafc - Off-white / Soft Mint-white */
-    --foreground: 20 14.3% 4.1%; /* #0f172a - Deep Charcoal Green */
+    --foreground: 222.2 47.4% 11.2%; /* #0f172a - Deep Charcoal Green */
     --card: 0 0% 100%; /* #ffffff - White */
-    --card-foreground: 20 14.3% 4.1%;
+    --card-foreground: 222.2 47.4% 11.2%;
     --popover: 0 0% 100%;
-    --popover-foreground: 20 14.3% 4.1%;
+    --popover-foreground: 222.2 47.4% 11.2%;
     --primary: 160 84% 39%; /* #10b981 - Emerald Green */
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;

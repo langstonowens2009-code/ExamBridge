@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview Analyzes a paid study resource URL, extracts the syllabus, and matches it with free alternative resources.
+ * @fileOverview Analyzes a paid study resource URL or raw syllabus text, and matches it with free alternative resources.
  *
  * - analyzeSyllabusAndMatchResources - A function that handles the analysis and matching process.
  * - AnalyzeSyllabusInput - The input type for the analyzeSyllabusAndMatchResources function.
@@ -11,11 +11,20 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const AnalyzeSyllabusInputSchema = z.object({
-  originalUrl: z.string().describe('The URL of the paid study resource.'),
-  examType: z.string().describe('The type of exam the resource is for (e.g., SAT, ACT, USMLE).'),
-});
+const AnalyzeSyllabusInputSchema = z.union([
+  z.object({
+    inputType: z.literal('url'),
+    originalUrl: z.string().describe('The URL of the paid study resource.'),
+    examType: z.string().describe('The type of exam the resource is for (e.g., SAT, ACT, USMLE).'),
+  }),
+  z.object({
+    inputType: z.literal('text'),
+    syllabusText: z.string().describe('The raw text of the syllabus.'),
+    examType: z.string().describe('The type of exam the resource is for (e.g., SAT, ACT, USMLE).'),
+  }),
+]);
 export type AnalyzeSyllabusInput = z.infer<typeof AnalyzeSyllabusInputSchema>;
+
 
 const StudyPathModuleSchema = z.object({
   topic: z.string().describe('The topic name from the paid resource.'),
@@ -33,10 +42,13 @@ export async function analyzeSyllabusAndMatchResources(
   return analyzeSyllabusAndMatchResourcesFlow(input);
 }
 
-// Step 1: Find Raw Syllabus Topics
+// Step 1: Find Raw Syllabus Topics (only if input is a URL)
 const findSyllabusTopicsPrompt = ai.definePrompt({
   name: 'findSyllabusTopicsPrompt',
-  input: {schema: AnalyzeSyllabusInputSchema},
+  input: {schema: z.object({
+    originalUrl: z.string().describe('The URL of the paid study resource.'),
+    examType: z.string().describe('The type of exam the resource is for (e.g., SAT, ACT, USMLE).'),
+  })},
   tools: [{googleSearch: {}}],
   prompt: `You are an expert in analyzing online learning resources. Your task is to find the public syllabus or list of main topics for the course located at the following URL: {{{originalUrl}}}.
 
@@ -83,14 +95,23 @@ const analyzeSyllabusAndMatchResourcesFlow = ai.defineFlow(
     outputSchema: AnalyzeSyllabusOutputSchema,
   },
   async (input) => {
-    // Step 1: Get raw syllabus topics as plain text.
-    const { text: rawSyllabusTopics } = await findSyllabusTopicsPrompt(input);
+    let rawSyllabusTopics: string;
 
-    if (!rawSyllabusTopics) {
-      console.log("Step 1 failed: No syllabus topics found.");
-      return [];
+    if (input.inputType === 'url') {
+      // Step 1: Get raw syllabus topics as plain text from URL.
+      const { text } = await findSyllabusTopicsPrompt({ originalUrl: input.originalUrl, examType: input.examType });
+      rawSyllabusTopics = text;
+      if (!rawSyllabusTopics) {
+        console.log("Step 1 failed: No syllabus topics found for URL.");
+        return [];
+      }
+      console.log("Step 1 Success: Found raw topics from URL:", rawSyllabusTopics);
+    } else {
+      // Input is already raw text, skip step 1.
+      rawSyllabusTopics = input.syllabusText;
+      console.log("Step 1 Skipped: Using provided raw syllabus text.");
     }
-    console.log("Step 1 Success: Found raw topics:", rawSyllabusTopics);
+
 
     // Step 2: Pass the raw text to the formatting prompt.
     const { text: rawJsonString } = await formatStudyPathPrompt({

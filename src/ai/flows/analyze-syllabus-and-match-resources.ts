@@ -3,29 +3,13 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { StudyPathModuleSchema } from '../schemas/study-path';
-
-// Local constant to bypass any AI analysis of syllabus content.
-// The AI's only job is to find resources for these predefined topics.
-const SYLLABUS_LOOKUP: Record<string, string> = {
-    'SAT': 'Evidence-Based Reading and Writing, Math (Heart of Algebra, Problem Solving and Data Analysis, Passport to Advanced Math)',
-    'ACT': 'English, Math, Reading, Science, Writing',
-    'AP Classes': 'Depends on the specific AP subject (e.g., AP Calculus AB: Limits, Derivatives, Integrals; AP US History: Colonial America, The Revolution, Civil War)',
-    'LSAT': 'Reading Comprehension, Analytical Reasoning, Logical Reasoning',
-    'MCAT': 'Chemical and Physical Foundations of Biological Systems; Critical Analysis and Reasoning Skills; Biological and Biochemical Foundations of Living Systems; Psychological, Social, and Biological Foundations of Behavior',
-    'GMAT': 'Quantitative Reasoning, Verbal Reasoning, Integrated Reasoning, Analytical Writing Assessment',
-    'USMLE (Steps 1-3)': 'Step 1: Basic Sciences (Anatomy, Physiology, Biochemistry), Step 2: Clinical Knowledge (Internal Medicine, Surgery, Pediatrics), Step 3: Clinical Management',
-    'COMLEX-USA': 'Osteopathic Principles and Practice, Medical Knowledge, Patient Care',
-    'NCLEX-RN/PN': 'Safe and Effective Care Environment, Health Promotion and Maintenance, Psychosocial Integrity, Physiological Integrity',
-    'BAR Exam': 'Constitutional Law, Contracts, Criminal Law and Procedure, Evidence, Real Property, Torts, Civil Procedure',
-};
-
+import { googleAI } from '@genkit-ai/google-genai';
 
 const analyzeSyllabusAndMatchResourcesFlow = ai.defineFlow(
   {
     name: 'analyzeSyllabusAndMatchResources',
     inputSchema: z.object({
         examType: z.string(),
-        // inputType, syllabusText, and originalUrl are no longer used but kept for schema compatibility with the front-end.
         inputType: z.string(), 
         syllabusText: z.string().optional(),
         originalUrl: z.string().optional(),
@@ -33,35 +17,45 @@ const analyzeSyllabusAndMatchResourcesFlow = ai.defineFlow(
     outputSchema: z.array(StudyPathModuleSchema),
   },
   async (input) => {
-    // This flow now *only* uses the examType to look up the syllabus.
-    // It completely ignores user-provided text or URLs.
-    const examSyllabus = SYLLABUS_LOOKUP[input.examType] || '';
     
-    // If no syllabus is found for the exam type, return empty.
-    if (!examSyllabus) {
-        console.log(`No syllabus found in SYLLABUS_LOOKUP for exam type: ${input.examType}`);
+    const researcherPrompt = `You are a world-class academic researcher. Your task is to find the syllabus or table of contents from the provided source.
+    
+    Source: ${input.inputType === 'url' ? input.originalUrl : input.syllabusText}
+
+    Return only the raw, unstructured text of the syllabus topics.
+    `;
+
+    const researcher = await ai.generate({
+      model: googleAI('gemini-pro'),
+      prompt: researcherPrompt,
+      tools: [googleAI.search()],
+    });
+
+    const researchText = researcher.text();
+    console.log('AI Researcher found the following text:', researchText);
+
+    if (!researchText || researchText.length < 20) {
         return [];
     }
 
-    // The single, reliable AI call.
-    const response = await ai.generate({
+    const architect = await ai.generate({
       prompt: `You are an Elite Academic Tutor. Your task is to create a study plan based on the provided syllabus topics.
-               For each topic, provide a brief, one-sentence description and a link to a high-quality, free study resource (like Khan Academy, Coursera, YouTube, or .edu sites).
+               For each topic, provide a brief, one-sentence description and find a link to a high-quality, free study resource (like Khan Academy, Coursera, YouTube, or .edu sites) using your search tool.
                
-               Syllabus Topics: "${examSyllabus}"
+               Syllabus Topics: "${researchText}"
 
                Return your response as a valid JSON array. Do not include any introductory text or markdown code blocks. Output ONLY the raw JSON array.`,
-      model: 'googleai/gemini-pro',
+      model: googleAI('gemini-pro'),
+      tools: [googleAI.search()],
       output: { 
         schema: z.array(StudyPathModuleSchema),
       },
     });
     
-    const output = response.output;
+    const output = architect.output();
     
-    // Handle cases where the model might still wrap the output in markdown
     if (!output) {
-      const textOutput = response.text;
+      const textOutput = architect.text();
       if (textOutput) {
         try {
           const cleanedString = textOutput.replace(/```json|```/g, '').trim();

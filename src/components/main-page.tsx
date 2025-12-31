@@ -85,20 +85,10 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!user) {
-        toast({
-            title: 'Please log in',
-            description: 'You need to be logged in to create a study plan.',
-            variant: 'destructive',
-        });
-        router.push('/login');
-        return;
-    }
-
     setIsLoading(true);
     setStudyPath(null);
 
-    const idToken = await user.getIdToken();
+    const idToken = user ? await user.getIdToken() : undefined;
     const result = await generateStudyPathAction(values, idToken);
 
     setIsLoading(false);

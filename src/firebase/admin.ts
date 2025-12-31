@@ -1,5 +1,3 @@
-'use server'
-
 import * as admin from 'firebase-admin';
 
 let app: admin.app.App;

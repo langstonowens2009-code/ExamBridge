@@ -66,14 +66,14 @@ export function StudyPathDashboard({ studyPath, onReset }: StudyPathDashboardPro
       
       <Accordion type="multiple" defaultValue={studyPath.map(week => week.week)} className="w-full space-y-4">
         {studyPath.map((weeklyModule, index) => (
-          <AccordionItem value={weeklyModule.week} key={index} className="border rounded-lg bg-card/50">
+          <AccordionItem value={weeklyModule.week} key={index} className="border rounded-lg bg-white shadow-sm">
             <AccordionTrigger className="p-6 text-xl font-bold hover:no-underline">
                 {weeklyModule.week}
             </AccordionTrigger>
             <AccordionContent className="p-6 pt-0">
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                     {weeklyModule.modules.map((module, moduleIndex) => (
-                        <Card key={moduleIndex} className="flex flex-col transform hover:-translate-y-1 transition-transform duration-300 ease-in-out shadow-lg hover:shadow-primary/30 border-border hover:border-primary/50">
+                        <Card key={moduleIndex} className="flex flex-col transform hover:-translate-y-1 transition-transform duration-300 ease-in-out shadow-lg hover:shadow-primary/20 border-border hover:border-primary/50">
                             <CardHeader>
                             <CardTitle className="flex items-start gap-3">
                                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary no-print">

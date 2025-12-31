@@ -43,9 +43,9 @@ const analyzeSyllabusPrompt = ai.definePrompt({
   }))},
   tools: [{googleSearch: {}}],
   prompt: `You are an expert in analyzing online learning resources and identifying key topics in their syllabus.
-Your task is to analyze the content of the following URL: {{{originalUrl}}} and extract a list of the main topics covered.
+Your task is to use Google Search to find the public syllabus or list of topics for the course located at the following URL: {{{originalUrl}}}. Do not fetch the URL directly.
+Once you have the list of main topics, for each topic, use the provided tools to find a relevant, high-quality, and free PDF or video resource.
 The resource is for the following exam type: {{{examType}}}.
-For each topic, use the provided tools to find a relevant, high-quality, and free PDF or video resource.
 Return a list of objects, each containing the topic, the link to the free resource, and a brief description of why it's a good match.`,
 });
 

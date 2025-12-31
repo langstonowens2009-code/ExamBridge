@@ -10,6 +10,7 @@ const syllabusAnalysisInputSchema = z.object({
   originalUrl: z.string().url().optional(),
   syllabusText: z.string().optional(),
   testDate: z.date().optional(),
+  customInstructions: z.string().optional(),
 });
 
 const studyPathOutputSchema = z.array(WeeklyStudyPathModuleSchema);
@@ -24,17 +25,18 @@ const fallbackResult = [{
 }];
 
 /**
- * Analyzes a syllabus (from a URL or text) and finds free learning resources to supplement it.
+ * Analyzes a syllabus (from a URL or text) and finds free learning resources to supplement it,
+ * acting as a Strategic Personal Tutor based on user's custom instructions.
  * This function uses a three-step AI agent process:
  * 1. Syllabus Analyst: Fetches content from a URL and extracts the core topics.
  * 2. Free Resource Researcher: Finds high-quality free materials for the specified exam.
- * 3. Study Plan Architect: Synthesizes the information, identifies gaps, and builds a structured study plan.
+ * 3. Study Plan Architect: Synthesizes the information, prioritizes based on custom goals, and builds a structured study plan.
  */
 export async function analyzeSyllabusAndMatchResources(
   input: z.infer<typeof syllabusAnalysisInputSchema>
 ): Promise<z.infer<typeof studyPathOutputSchema>> {
   try {
-    const { examType, originalUrl, syllabusText, testDate } = input;
+    const { examType, originalUrl, syllabusText, testDate, customInstructions } = input;
 
     let paidResourceTopics = '';
     if (originalUrl) {
@@ -86,15 +88,17 @@ export async function analyzeSyllabusAndMatchResources(
     const architectResult = await ai.generate({
       model: 'gemini-1.5-flash',
       prompt: `
-        You are a Study Plan Architect. Your task is to create a supplementary study plan.
-        You have been given a list of topics from a user's paid resource and a list of high-quality free resources.
-        
-        Your Goal: Compare the paid resource topics with the free resources. Create a weekly study plan using ONLY the free resources that fill gaps or offer a deeper dive than the paid resource likely does.
+        You are a Strategic Personal Tutor. Your task is to create a supplementary study plan that adheres to the user's specific goals.
 
+        Your Chain-of-Thought Process:
+        Step A: Analyze the curriculum from the user's paid resource.
+        Step B: Carefully evaluate the user's custom instructions. This is your highest priority. If they have a specific request (e.g., 'focus on Math,' 'find harder questions'), you MUST tailor the plan to that, rather than giving a general overview.
+        Step C: Compare the paid resource topics with the high-quality free resources you have found.
+        Step D: Synthesize a plan. Create a weekly study plan using ONLY the free resources that fill gaps, offer a deeper dive, or directly address the user's custom instructions.
+        
         ${timelinePrompt}
 
-        For each module in your plan, the 'description' MUST explain why this free resource is a necessary supplement. 
-        For example: 'While the paid site covers the basics, this Khan Academy video provides a deep-dive required for the new exam format.' or 'This official guide covers a niche topic often missed by third-party resources.'
+        For each module in your plan, the 'description' MUST explicitly reference the user's goal. For example: 'Since you requested more focus on Algebra, this advanced video from Khan Academy fills a gap left by your paid resource.' or 'To meet your goal of finding harder questions, this official practice exam provides challenging problems.'
 
         Format your final output as a clean JSON array of weekly study modules.
         Each object in the array must have a 'week' property and a 'modules' array.
@@ -106,6 +110,9 @@ export async function analyzeSyllabusAndMatchResources(
 
         Available Free Resources:
         ${freeResourceText}
+
+        User's Custom Instructions:
+        ${customInstructions || 'No custom instructions provided. Focus on general supplementation.'}
       `,
       output: {
         schema: studyPathOutputSchema,

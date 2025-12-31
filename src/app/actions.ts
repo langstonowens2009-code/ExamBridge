@@ -1,7 +1,6 @@
 'use server';
 
 import { z } from 'zod';
-import * as admin from 'firebase-admin';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { analyzeSyllabusAndMatchResources } from '@/ai/flows/analyze-syllabus-and-match-resources';
@@ -13,12 +12,14 @@ const formSchema = z.discriminatedUnion('inputType', [
     originalUrl: z.string().url(),
     examType: z.string().min(1),
     testDate: z.date().optional(),
+    customInstructions: z.string().optional(),
   }),
   z.object({
     inputType: z.literal('text'),
     syllabusText: z.string().min(20, 'Syllabus text must be at least 20 characters.'),
     examType: z.string().min(1),
     testDate: z.date().optional(),
+    customInstructions: z.string().optional(),
   }),
 ]);
 

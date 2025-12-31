@@ -41,12 +41,14 @@ const formSchema = z.discriminatedUnion('inputType', [
     originalUrl: z.string().url({ message: 'Please enter a valid URL.' }),
     examType: z.string().min(1, { message: 'Please select an exam type.' }),
     testDate: z.date().optional(),
+    customInstructions: z.string().optional(),
   }),
   z.object({
     inputType: z.literal('text'),
     syllabusText: z.string().min(20, 'Syllabus text must be at least 20 characters.'),
     examType: z.string().min(1, { message: 'Please select an exam type.' }),
     testDate: z.date().optional(),
+    customInstructions: z.string().optional(),
   }),
 ]);
 
@@ -70,6 +72,7 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
       inputType: 'url',
       originalUrl: '',
       examType: '',
+      customInstructions: '',
     },
   });
 
@@ -186,6 +189,27 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
                                         )}
                                         />
                                     )}
+
+                                    <FormField
+                                        control={form.control}
+                                        name="customInstructions"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                            <FormLabel>Custom Instructions (Optional)</FormLabel>
+                                            <FormControl>
+                                                <Textarea
+                                                placeholder="e.g., 'Focus only on the Math section' or 'Find harder practice questions for Organic Chemistry'"
+                                                className="min-h-[100px]"
+                                                {...field}
+                                                />
+                                            </FormControl>
+                                            <FormDescription>
+                                                Tell the AI your specific goals or what to focus on.
+                                            </FormDescription>
+                                            <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
 
                                     <div className="flex flex-col items-center space-y-4">
                                         <FormField

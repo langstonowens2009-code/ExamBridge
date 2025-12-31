@@ -30,7 +30,7 @@ import type { WeeklyStudyPath } from '@/ai/schemas/study-path';
 import { StudyPathDashboard } from './study-path-dashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -149,7 +149,7 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
           onValueChange={onAccordionValueChange}
         >
             <AccordionItem value="item-1" className="border-none">
-                <AccordionTrigger className="w-full h-12 text-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/30 hover:shadow-primary/50 rounded-md px-6 hover:no-underline">
+                <AccordionTrigger className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-primary to-accent text-primary-foreground hover:opacity-90 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/30 hover:shadow-primary/50 rounded-md px-6 hover:no-underline">
                      {isLoading ? (
                         <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> AI Analyzing Syllabus...</>
                     ) : (
@@ -157,7 +157,7 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
                     )}
                 </AccordionTrigger>
                 <AccordionContent>
-                    <Card className="w-full mt-4 shadow-2xl bg-black/30 backdrop-blur-md border-white/10 rounded-lg">
+                    <Card className="w-full mt-4 shadow-2xl bg-card/80 backdrop-blur-lg border rounded-lg">
                         <CardContent className="p-6">
                             <Form {...form}>
                                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -177,7 +177,7 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
                                             <FormItem>
                                                 <FormLabel className="sr-only">Resource URL</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="https://www.paid-course.com" {...field} className="h-12 text-base" />
+                                                    <Input placeholder="https://www.paid-course.com" {...field} className="h-12 text-base bg-white/5 backdrop-blur-lg" />
                                                 </FormControl>
                                                 <FormDescription>
                                                     Enter the URL of a paid study resource, and we'll find free alternatives.
@@ -199,7 +199,7 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
 Unit 1: Algebra Basics
 Unit 2: Geometry Fundamentals
 Unit 3: Advanced Calculus"
-                                                className="min-h-[150px] text-base"
+                                                className="min-h-[150px] text-base bg-white/5 backdrop-blur-lg"
                                                 {...field}
                                                 />
                                             </FormControl>
@@ -346,14 +346,14 @@ Unit 3: Advanced Calculus"
                                         name="testDate"
                                         render={({ field }) => (
                                             <FormItem className="flex flex-col items-center">
-                                            <FormLabel className="mb-2 text-left w-full">When is your test date? (Optional)</FormLabel>
+                                            <FormLabel className="mb-2 text-left w-full font-semibold text-white">When is your test date? (Optional)</FormLabel>
                                             <Popover>
                                                 <PopoverTrigger asChild>
                                                 <FormControl>
                                                     <Button
                                                     variant={"outline"}
                                                     className={cn(
-                                                        "w-full pl-3 text-left font-normal h-12 text-base",
+                                                        "w-full pl-3 text-left font-normal h-12 text-base bg-white/5",
                                                         !field.value && "text-muted-foreground"
                                                     )}
                                                     >
@@ -388,11 +388,11 @@ Unit 3: Advanced Calculus"
                                         name="customInstructions"
                                         render={({ field }) => (
                                             <FormItem>
-                                            <FormLabel>Custom Instructions (Optional)</FormLabel>
+                                            <FormLabel className="font-semibold text-white">Custom Instructions (Optional)</FormLabel>
                                             <FormControl>
                                                 <Textarea
                                                 placeholder="e.g., 'Focus only on the Math section' or 'Find harder practice questions for Organic Chemistry'"
-                                                className="min-h-[100px]"
+                                                className="min-h-[100px] bg-white/5 backdrop-blur-lg"
                                                 {...field}
                                                 />
                                             </FormControl>
@@ -405,7 +405,7 @@ Unit 3: Advanced Calculus"
                                     />
 
 
-                                    <Button type="submit" size="lg" className="w-full h-12 text-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/30 hover:shadow-primary/50" disabled={isButtonDisabled}>
+                                    <Button type="submit" size="lg" className="w-full h-12 text-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/30 hover:shadow-primary/50 drop-shadow-[0_0_10px_hsl(var(--primary))]" disabled={isButtonDisabled}>
                                         {isLoading ? 'Submitting...' : 'Submit'}
                                     </Button>
                                 </form>

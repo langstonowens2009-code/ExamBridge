@@ -82,7 +82,7 @@ export function StudyPathDashboard({ studyPath, onReset }: StudyPathDashboardPro
                                 <span>{module.topic}</span>
                             </CardTitle>
                             </CardHeader>
-                            <CardContent className="flex-1">
+                            <CardContent className="flex-1 p-6">
                             <CardDescription>{module.description}</CardDescription>
                             </CardContent>
                             <CardFooter>

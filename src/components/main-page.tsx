@@ -343,27 +343,6 @@ Unit 3: Advanced Calculus"
                                     
                                     <FormField
                                         control={form.control}
-                                        name="customInstructions"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                            <FormLabel className="font-semibold">Custom Instructions (Optional)</FormLabel>
-                                            <FormControl>
-                                                <Textarea
-                                                placeholder="e.g., 'Focus only on the Math section' or 'Find harder practice questions for Organic Chemistry'"
-                                                className="min-h-[100px]"
-                                                {...field}
-                                                />
-                                            </FormControl>
-                                            <FormDescription className="leading-relaxed">
-                                                Tell the AI your specific goals or what to focus on.
-                                            </FormDescription>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    <FormField
-                                        control={form.control}
                                         name="testDate"
                                         render={({ field }) => (
                                             <FormItem className="flex flex-col items-center">
@@ -399,6 +378,27 @@ Unit 3: Advanced Calculus"
                                                 />
                                                 </PopoverContent>
                                             </Popover>
+                                            <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    <FormField
+                                        control={form.control}
+                                        name="customInstructions"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                            <FormLabel className="font-semibold">Custom Instructions (Optional)</FormLabel>
+                                            <FormControl>
+                                                <Textarea
+                                                placeholder="e.g., 'Focus only on the Math section' or 'Find harder practice questions for Organic Chemistry'"
+                                                className="min-h-[100px]"
+                                                {...field}
+                                                />
+                                            </FormControl>
+                                            <FormDescription className="leading-relaxed">
+                                                Tell the AI your specific goals or what to focus on.
+                                            </FormDescription>
                                             <FormMessage />
                                             </FormItem>
                                         )}

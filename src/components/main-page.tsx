@@ -311,38 +311,17 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
                                     
                                     <FormField
                                         control={form.control}
-                                        name="customInstructions"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                            <FormLabel>Custom Instructions (Optional)</FormLabel>
-                                            <FormControl>
-                                                <Textarea
-                                                placeholder="e.g., 'Focus only on the Math section' or 'Find harder practice questions for Organic Chemistry'"
-                                                className="min-h-[100px]"
-                                                {...field}
-                                                />
-                                            </FormControl>
-                                            <FormDescription>
-                                                Tell the AI your specific goals or what to focus on.
-                                            </FormDescription>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    <FormField
-                                        control={form.control}
                                         name="testDate"
                                         render={({ field }) => (
                                             <FormItem className="flex flex-col items-center">
-                                            <FormLabel className="mb-2 text-left w-full md:w-1/2">When is your test date? (Optional)</FormLabel>
+                                            <FormLabel className="mb-2 text-left w-full">When is your test date? (Optional)</FormLabel>
                                             <Popover>
                                                 <PopoverTrigger asChild>
                                                 <FormControl>
                                                     <Button
                                                     variant={"outline"}
                                                     className={cn(
-                                                        "w-full md:w-1/2 pl-3 text-left font-normal h-12 text-base",
+                                                        "w-full pl-3 text-left font-normal h-12 text-base",
                                                         !field.value && "text-muted-foreground"
                                                     )}
                                                     >
@@ -371,6 +350,28 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
                                             </FormItem>
                                         )}
                                     />
+
+                                    <FormField
+                                        control={form.control}
+                                        name="customInstructions"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                            <FormLabel>Custom Instructions (Optional)</FormLabel>
+                                            <FormControl>
+                                                <Textarea
+                                                placeholder="e.g., 'Focus only on the Math section' or 'Find harder practice questions for Organic Chemistry'"
+                                                className="min-h-[100px]"
+                                                {...field}
+                                                />
+                                            </FormControl>
+                                            <FormDescription>
+                                                Tell the AI your specific goals or what to focus on.
+                                            </FormDescription>
+                                            <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
 
                                     <Button type="submit" size="lg" className="w-full h-12 text-lg font-semibold" disabled={isButtonDisabled}>
                                         {isLoading ? 'Submitting...' : 'Submit'}

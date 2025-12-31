@@ -7,6 +7,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '@/firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '@/firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,18 +45,43 @@ export default function SignupPage() {
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      await updateProfile(userCredential.user, {
+      const user = userCredential.user;
+      
+      // Update profile display name
+      await updateProfile(user, {
         displayName: values.name,
       });
+
+      // Create user document in Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        name: values.name,
+        email: values.email,
+        createdAt: new Date(),
+      });
+
       router.push('/dashboard');
       router.refresh();
+
     } catch (error: any) {
+      console.error("Firebase Signup Error:", error.code, error.message);
+      
+      let description = "An unexpected error occurred. Please try again.";
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          description = "This email is already in use by another account.";
+          break;
+        case 'auth/weak-password':
+          description = "The password is too weak. Please use at least 6 characters.";
+          break;
+        case 'auth/invalid-email':
+          description = "Please enter a valid email address.";
+          break;
+      }
+
       toast({
         variant: 'destructive',
         title: 'Sign-up Failed',
-        description: error.code === 'auth/email-already-in-use' 
-            ? 'This email is already in use.'
-            : 'An unexpected error occurred.',
+        description: description,
       });
     } finally {
       setIsLoading(false);

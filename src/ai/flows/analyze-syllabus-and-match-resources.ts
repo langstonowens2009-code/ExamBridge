@@ -20,25 +20,28 @@ export const analyzeSyllabusAndMatchResourcesFlow = ai.defineFlow(
     const examType = (input.examType || 'SAT').toUpperCase();
 
     // STEP 1: RESEARCHER - Get raw syllabus topics
-    const research = await ai.generate({
+    const researchResponse = await ai.generate({
       prompt: `You are an expert curriculum researcher. Your job is to find the syllabus topics for a given course.
                Course details: ${contentToProcess}.
-               Extract the main topics as a raw text list. Do not include introductory text or markdown.`,
+               Extract the main topics as a raw text list. Do not include introductory text or markdown. Just output the list of topics.`,
       model: 'googleai/gemini-pro',
       config: {
         tools: [{ tool: 'googleSearch' }],
       }
     });
 
-    const rawData = research.text;
-    console.log("Raw research data:", rawData);
+    const rawData = researchResponse.text;
+    console.log("--- Raw Data from Researcher ---");
+    console.log(rawData);
+    console.log("--------------------------------");
 
+    // If the researcher returns no meaningful data, exit early.
     if (!rawData || rawData.length < 20) {
         return [];
     }
 
     // STEP 2: ARCHITECT - Format into UI Cards and find resources
-    const architect = await ai.generate({
+    const architectResponse = await ai.generate({
       prompt: `You are a curriculum architect. Take this list of topics and find the best free, high-quality study resource (like Khan Academy, Coursera, YouTube, or .edu sites) on the web for each one, tailored for the ${examType} exam.
                
                Topics: "${rawData}"
@@ -50,14 +53,18 @@ export const analyzeSyllabusAndMatchResourcesFlow = ai.defineFlow(
       },
     });
     
-    const output = architect.output;
+    const output = architectResponse.output;
     
     // Clean up potential markdown in the AI output
     if (!output) {
-      const textOutput = architect.text;
+      const textOutput = architectResponse.text;
       if (textOutput) {
         try {
+          // Robust parsing: remove markdown and trim whitespace
           const cleanedString = textOutput.replace(/```json|```/g, '').trim();
+          console.log("--- Cleaned Architect String for Parsing ---");
+          console.log(cleanedString);
+          console.log("------------------------------------------");
           return JSON.parse(cleanedString);
         } catch (e) {
           console.error("Failed to parse architect text output:", e);

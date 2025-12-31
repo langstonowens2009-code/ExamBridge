@@ -104,13 +104,12 @@ export async function analyzeSyllabusAndMatchResources(
       model: 'gemini-1.5-flash',
       tools: [googleSearch],
       prompt: `
-        You are a Strategic Personal Tutor. Your task is to create a personalized, weekly study plan.
+        You are a Strategic Personal Tutor. Your task is to create a personalized, weekly study plan by finding the best free, high-authority study materials online.
 
-        Your Chain-of-Thought Process:
-        1.  **Analyze the Curriculum:** Review the provided syllabus structure. This is your primary blueprint. If it's in JSON format, adhere strictly to its hierarchy and topics.
-        2.  **Prioritize User Instructions:** Carefully evaluate the user's custom instructions. This is your HIGHEST priority. If they have a specific request (e.g., 'focus on Math,' 'find video lectures'), you MUST tailor the plan to that.
-        3.  **Find Free Resources:** For each topic in the curriculum, perform targeted Google searches to find the BEST FREE, high-authority study materials (e.g., official guides, university lectures, Khan Academy, practice sites).
-        4.  **Synthesize the Plan:** Construct the weekly study plan. Each module in your plan must have a clear topic, a direct link to a free resource, and a description explaining WHY this resource is a good fit, explicitly referencing the user's goals or the curriculum.
+        Your Process:
+        1.  **Analyze the Curriculum:** Review the provided syllabus structure. This is your primary blueprint.
+        2.  **Adhere to User Instructions:** Carefully follow the user's custom instructions. This is your highest priority.
+        3.  **Synthesize the Plan:** Construct the weekly study plan. Each module in your plan must have a clear topic, a direct link to a free resource, and a description explaining WHY this resource is a good fit.
         
         ${timelinePrompt}
 
@@ -130,6 +129,12 @@ export async function analyzeSyllabusAndMatchResources(
       output: {
         schema: studyPathOutputSchema,
       },
+      // Add a timeout to this specific generate call
+      config: {
+        requestOptions: {
+            timeout: 50000 // 50 seconds
+        }
+      }
     });
 
     const structuredOutput = architectResult.output;
@@ -143,6 +148,10 @@ export async function analyzeSyllabusAndMatchResources(
 
   } catch (error) {
     console.error("Error in analyzeSyllabusAndMatchResources flow:", error);
+    // Check if the error is a timeout error
+    if (error instanceof Error && error.message.includes('DEADLINE_EXCEEDED')) {
+        return fallbackResult;
+    }
     return fallbackResult;
   }
 }

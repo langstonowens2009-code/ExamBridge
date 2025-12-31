@@ -64,26 +64,14 @@ const formatStudyPathPrompt = ai.definePrompt({
     syllabusTopics: z.string(),
     examType: z.string(),
   })},
+  output: { schema: AnalyzeSyllabusOutputSchema },
   tools: [{googleSearch: {}}],
   prompt: `You are an expert curriculum designer. You have been given a list of syllabus topics. For each topic, use your search tool to find a relevant, high-quality, and free PDF or video resource that covers that topic. The resources should be suitable for someone studying for the '{{{examType}}}' exam.
 
 Syllabus Topics:
 {{{syllabusTopics}}}
 
-Your response MUST be a valid JSON string that can be parsed directly. Do not wrap the JSON string in markdown backticks or any other text. Output ONLY the raw JSON object.
-Example format:
-[
-  {
-    "topic": "Example Topic 1",
-    "link": "https://example.com/resource1",
-    "description": "This is a good match for the first topic."
-  },
-  {
-    "topic": "Example Topic 2",
-    "link": "https://example.com/resource2",
-    "description": "This is a good match for the second topic."
-  }
-]
+Your response MUST be a valid JSON array that conforms to the output schema. Do not include any introductory text or markdown code blocks. Output ONLY the raw JSON object.
 `,
 });
 
@@ -103,6 +91,7 @@ const analyzeSyllabusAndMatchResourcesFlow = ai.defineFlow(
       rawSyllabusTopics = text;
       if (!rawSyllabusTopics) {
         console.log("Step 1 failed: No syllabus topics found for URL.");
+        // UI Fallback: If step 1 fails, we return an empty array, which the frontend will interpret as a failure.
         return [];
       }
       console.log("Step 1 Success: Found raw topics from URL:", rawSyllabusTopics);
@@ -114,33 +103,17 @@ const analyzeSyllabusAndMatchResourcesFlow = ai.defineFlow(
 
 
     // Step 2: Pass the raw text to the formatting prompt.
-    const { text: rawJsonString } = await formatStudyPathPrompt({
+    const { output } = await formatStudyPathPrompt({
       syllabusTopics: rawSyllabusTopics,
       examType: input.examType,
     });
     
-    if (!rawJsonString) {
-      console.log("Step 2 failed: AI did not return a JSON string.");
+    if (!output) {
+      console.log("Step 2 failed: AI did not return a valid structured output.");
       return [];
     }
-    
-    // Log the raw string from the AI before any parsing.
-    console.log("Raw AI Output:", rawJsonString);
 
-    try {
-      // Robust Parser: Clean the string before parsing.
-      const cleanedJsonString = rawJsonString
-        .replace(/```json|```/g, '') // Strip markdown fences
-        .trim(); // Remove leading/trailing whitespace
-
-      const parsedOutput = JSON.parse(cleanedJsonString);
-      // Validate the parsed output against the schema to be safe.
-      return AnalyzeSyllabusOutputSchema.parse(parsedOutput);
-    } catch (e: any) {
-      console.error("Failed to parse JSON from AI response:", e.message);
-      console.error("Malformed JSON string (after cleaning):", rawJsonString);
-      // If parsing fails, return an empty array which will trigger a user-facing error.
-      return [];
-    }
+    console.log("Step 2 Success: Formatted study path:", output);
+    return output;
   }
 );

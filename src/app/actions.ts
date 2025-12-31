@@ -32,11 +32,14 @@ export async function generateStudyPathAction(data: z.infer<typeof formSchema>):
   try {
     const studyPath = await analyzeSyllabusAndMatchResources(validation.data);
     if (!studyPath || studyPath.length === 0) {
+        if (validation.data.inputType === 'url') {
+            return { success: false, error: "I couldn't reach that site's syllabus. Please try pasting the syllabus text manually so I can build your plan." };
+        }
         return { success: false, error: "Could not find any modules or resources for the provided syllabus. Please try again." };
     }
     return { success: true, data: studyPath };
   } catch (error: any) {
-    // Detailed logging as requested
+    // Detailed logging
     console.error("Error in generateStudyPathAction:", {
       status: error.status,
       reason: error.reason,

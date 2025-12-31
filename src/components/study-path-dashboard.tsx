@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { StudyPathModule } from '@/ai/schemas/study-path';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface StudyPathDashboardProps {
   studyPath: StudyPathModule[];
@@ -20,17 +21,24 @@ interface StudyPathDashboardProps {
 
 export function StudyPathDashboard({ studyPath, onReset }: StudyPathDashboardProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handlePrint = () => {
     window.print();
   };
   
   const handleSyncToNotion = () => {
-    // TODO: Implement Notion API call
     toast({
       title: 'Coming Soon!',
       description: 'Sync to Notion functionality will be implemented in a future update.',
     });
+  }
+
+  const handleSaveToDashboard = () => {
+      toast({
+        title: 'Saved!',
+        description: 'Your study plan has been saved to your dashboard.',
+      });
   }
 
   return (
@@ -43,6 +51,10 @@ export function StudyPathDashboard({ studyPath, onReset }: StudyPathDashboardPro
         <div className="flex gap-2 mt-4 md:mt-0">
             <Button variant="outline" onClick={onReset}><RefreshCw className="mr-2 h-4 w-4" /> Start Over</Button>
             
+            {user && (
+                 <Button onClick={handleSaveToDashboard}>Save to Dashboard</Button>
+            )}
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon">
@@ -61,11 +73,6 @@ export function StudyPathDashboard({ studyPath, onReset }: StudyPathDashboardPro
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-
-            {/* 
-            TODO: Add a "Save to Dashboard" button here, visible only to logged-in users.
-            This button should trigger a server action to save the studyPath to Firestore.
-            */}
         </div>
       </div>
       

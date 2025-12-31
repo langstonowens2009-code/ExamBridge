@@ -1,13 +1,10 @@
-'use server';
-
-import {genkit} from 'genkit';
-import {googleAI} from '@genkit-ai/google-genai';
+// REMOVE "use server" FROM HERE
+import { genkit } from 'genkit';
+import { googleAI } from '@genkit-ai/google-genai';
 
 export const ai = genkit({
   plugins: [
-    googleAI({
-      location: 'global',
-      apiVersion: 'v1',
-    }),
+    googleAI() 
   ],
+  model: 'googleai/gemini-2.0-flash', 
 });

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2, Sparkles, Link, Type } from 'lucide-react';
+import { Loader2, Sparkles, Link as LinkIcon, Type } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,6 +32,7 @@ import { EXAM_CATEGORIES } from '@/lib/constants';
 import { generateStudyPathAction } from '@/app/actions';
 import type { StudyPathModule } from '@/ai/schemas/study-path';
 import { StudyPathDashboard } from './study-path-dashboard';
+import { useAuth } from '@/hooks/useAuth';
 
 const formSchema = z.discriminatedUnion('inputType', [
   z.object({
@@ -52,6 +53,7 @@ export function MainPage() {
   const [studyPath, setStudyPath] = useState<StudyPathModule[] | null>(null);
   const [inputType, setInputType] = useState<'url' | 'text'>('url');
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -66,7 +68,6 @@ export function MainPage() {
     const newInputType = checked ? 'text' : 'url';
     setInputType(newInputType);
     form.setValue('inputType', newInputType);
-    // Reset validation and values for the other field
     if (newInputType === 'url') {
       form.reset({ ...form.getValues(), inputType: 'url', syllabusText: undefined });
     } else {
@@ -78,7 +79,8 @@ export function MainPage() {
     setIsLoading(true);
     setStudyPath(null);
 
-    const result = await generateStudyPathAction(values);
+    const idToken = await user?.getIdToken();
+    const result = await generateStudyPathAction(values, idToken);
 
     setIsLoading(false);
 
@@ -112,7 +114,7 @@ export function MainPage() {
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                         <div className="flex items-center justify-center space-x-3 pb-4">
-                            <Link className="h-4 w-4" />
+                            <LinkIcon className="h-4 w-4" />
                             <Label htmlFor="input-type-switch">Use URL</Label>
                             <Switch id="input-type-switch" checked={inputType === 'text'} onCheckedChange={handleSwitchChange} />
                             <Label htmlFor="input-type-switch">Use Text</Label>

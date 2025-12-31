@@ -1,36 +1,79 @@
+'use client';
+
 import Link from 'next/link';
-import { GraduationCap } from 'lucide-react';
+import { GraduationCap, LogOut, LayoutDashboard } from 'lucide-react';
 import { Button } from './ui/button';
-import { Dialog, DialogTrigger } from '@/components/ui/dialog';
-import { LoginModal } from './login-modal';
-import { SignupModal } from './signup-modal';
+import { useAuth } from '@/hooks/useAuth';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export function Header() {
+  const { user, loading, signOut } = useAuth();
+
   return (
     <header className="px-4 lg:px-6 h-16 flex items-center border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
       <Link href="/" className="flex items-center justify-center gap-2" prefetch={false}>
         <GraduationCap className="h-6 w-6 text-primary" />
         <span className="text-lg font-bold">ExamBridge</span>
       </Link>
-      <nav className="ml-auto flex gap-2">
-        {/*
-          TODO: Implement Firebase Authentication
-          - Create /login and /signup pages
-          - Wire up these buttons to navigate to those pages
-          - Show user avatar and a "Logout" button when logged in
-        */}
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline">Log In</Button>
-          </DialogTrigger>
-          <LoginModal />
-        </Dialog>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button>Sign Up</Button>
-          </DialogTrigger>
-          <SignupModal />
-        </Dialog>
+      <nav className="ml-auto flex gap-2 items-center">
+        {loading ? (
+          <div className="h-8 w-24 bg-muted/50 rounded animate-pulse" />
+        ) : user ? (
+          <>
+            <Button variant="ghost" asChild>
+                <Link href="/dashboard">Dashboard</Link>
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user.photoURL || ''} alt={user.displayName || user.email || ''} />
+                    <AvatarFallback>{user.email?.[0].toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{user.displayName}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard">
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={signOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
+        ) : (
+          <>
+            <Button variant="outline" asChild>
+              <Link href="/login">Log In</Link>
+            </Button>
+            <Button asChild>
+              <Link href="/signup">Sign Up</Link>
+            </Button>
+          </>
+        )}
       </nav>
     </header>
   );

@@ -5,6 +5,7 @@ export const ai = genkit({
   plugins: [
     googleAI({
       location: 'global',
+      apiVersion: 'v1',
     }) 
   ],
 });

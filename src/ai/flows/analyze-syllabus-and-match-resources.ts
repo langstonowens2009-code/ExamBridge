@@ -33,15 +33,30 @@ export async function analyzeSyllabusAndMatchResources(
   return analyzeSyllabusAndMatchResourcesFlow(input);
 }
 
-const analyzeSyllabusPrompt = ai.definePrompt({
-  name: 'analyzeSyllabusPrompt',
+// Step 1: Find Raw Syllabus Topics
+const findSyllabusTopicsPrompt = ai.definePrompt({
+  name: 'findSyllabusTopicsPrompt',
   input: {schema: AnalyzeSyllabusInputSchema},
   tools: [{googleSearch: {}}],
-  prompt: `You are an expert in analyzing online learning resources. Your task is to find the public syllabus or list of topics for the course located at the following URL: {{{originalUrl}}}.
+  prompt: `You are an expert in analyzing online learning resources. Your task is to find the public syllabus or list of main topics for the course located at the following URL: {{{originalUrl}}}.
 
-IMPORTANT: Do NOT fetch the content of the URL directly. Instead, use Google Search to find the public syllabus, table of contents, or curriculum for the course.
+IMPORTANT: Do NOT fetch the content of the URL directly. Instead, use your Google Search tool to find the public syllabus, table of contents, or curriculum for the course.
 
-Once you have the list of main topics from your search, for each topic, use your search tool again to find a relevant, high-quality, and free PDF or video resource that covers that topic. The resources should be suitable for someone studying for the '{{{examType}}}' exam.
+Return only a list of the main topics you find, separated by newlines. Do not include any other information or formatting.`,
+});
+
+// Step 2: Format and Find Resources
+const formatStudyPathPrompt = ai.definePrompt({
+  name: 'formatStudyPathPrompt',
+  input: {schema: z.object({
+    syllabusTopics: z.string(),
+    examType: z.string(),
+  })},
+  tools: [{googleSearch: {}}],
+  prompt: `You are an expert curriculum designer. You have been given a list of syllabus topics. For each topic, use your search tool to find a relevant, high-quality, and free PDF or video resource that covers that topic. The resources should be suitable for someone studying for the '{{{examType}}}' exam.
+
+Syllabus Topics:
+{{{syllabusTopics}}}
 
 Return a JSON string representing an array of objects. Each object must contain 'topic', 'link', and 'description' keys.
 Example format:
@@ -60,22 +75,36 @@ Example format:
 `,
 });
 
+
 const analyzeSyllabusAndMatchResourcesFlow = ai.defineFlow(
   {
     name: 'analyzeSyllabusAndMatchResourcesFlow',
     inputSchema: AnalyzeSyllabusInputSchema,
     outputSchema: AnalyzeSyllabusOutputSchema,
   },
-  async input => {
-    const {text} = await analyzeSyllabusPrompt(input);
+  async (input) => {
+    // Step 1: Get raw syllabus topics as plain text.
+    const { text: rawSyllabusTopics } = await findSyllabusTopicsPrompt(input);
+
+    if (!rawSyllabusTopics) {
+      console.log("Step 1 failed: No syllabus topics found.");
+      return [];
+    }
+
+    // Step 2: Pass the raw text to the formatting prompt.
+    const { text: jsonString } = await formatStudyPathPrompt({
+      syllabusTopics: rawSyllabusTopics,
+      examType: input.examType,
+    });
     
-    if (!text) {
+    if (!jsonString) {
+      console.log("Step 2 failed: AI did not return a JSON string.");
       return [];
     }
 
     try {
       // The model should return a JSON string, so we parse it.
-      const parsedOutput = JSON.parse(text);
+      const parsedOutput = JSON.parse(jsonString);
       // Validate the parsed output against the schema to be safe.
       return AnalyzeSyllabusOutputSchema.parse(parsedOutput);
     } catch (e) {

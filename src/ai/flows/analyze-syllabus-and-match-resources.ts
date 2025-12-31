@@ -62,9 +62,6 @@ const analyzeSyllabusAndMatchResourcesFlow = ai.defineFlow(
       if (textOutput) {
         try {
           const cleanedString = textOutput.replace(/```json|```/g, '').trim();
-          console.log("--- Cleaned AI String for Parsing ---");
-          console.log(cleanedString);
-          console.log("-------------------------------------");
           return JSON.parse(cleanedString);
         } catch (e) {
           console.error("Failed to parse AI text output:", e);

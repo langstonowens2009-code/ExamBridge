@@ -4,59 +4,111 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { StudyPathModuleSchema } from '@/ai/schemas/study-path';
 
-// 1. MASTER 2025 SYLLABUS DATABASE
 const MASTER_SYLLABUS: Record<string, string> = {
-  "SAT": "Algebra (Linear/Systems), Advanced Math (Quadratics/Exponents), Problem Solving (Ratios/Stats), Geometry & Trig, Reading: Ideas & Evidence, Writing: Grammar & Logical Flow.",
-  "ACT": "English (Grammar/Punctuation), Mathematics (Pre-Algebra to Trig), Reading Comprehension (Social/Natural Sciences), Science (Data Interpretation/Research Summaries).",
-  "LSAT": "Logical Reasoning (Argument Evaluation), Reading Comprehension (Scholarly Texts), Analytical Reasoning (Logic Games/Relationship Structures).",
-  "MCAT": "Bio/Biochem Foundations, Chem/Phys Foundations, Psych/Social Foundations, Critical Analysis & Reasoning Skills (CARS).",
-  "GMAT": "Quantitative Reasoning (Arithmetic/Algebra), Verbal Reasoning (Critical Reasoning/Reading Comp), Data Insights (Multi-source/Table Analysis).",
-  "USMLE": "Step 1: Foundational Basic Sciences. Step 2 CK: Clinical Knowledge & Patient Care. Step 3: Patient Management & Clinical Decision Making.",
-  "COMLEX": "Osteopathic Principles & Manipulative Treatment, Foundational Biomedical Sciences, Clinical Presentations (Human Development, Nervous System, Musculoskeletal).",
-  "NCLEX": "Management of Care, Safety & Infection Control, Pharmacology/Parenteral Therapies, Physiological Adaptation, Health Promotion & Maintenance.",
-  "BAR": "MBE Topics: Civil Procedure, Constitutional Law, Contracts, Criminal Law & Procedure, Evidence, Real Property, and Torts.",
-  "AP": "Standardized AP curriculum modules focusing on core unit mastery, evidence-based reasoning, and exam-specific free response preparation."
+  "SAT": "Algebra, Advanced Math, Problem Solving, Geometry, Reading, Writing.",
+  "ACT": "English, Math, Reading Comprehension, Science Data.",
+  "LSAT": "Logical Reasoning, Reading Comp, Analytical Reasoning.",
+  "MCAT": "Biochem, Biology, Physics, Psych, Sociology, CARS.",
+  "GMAT": "Quant, Verbal, Data Insights.",
+  "USMLE": "Step 1: Basic Sciences. Step 2: Clinical. Step 3: Management.",
+  "COMLEX": "Osteopathic Principles, Clinical Sciences, Patient Care.",
+  "NCLEX": "Management of Care, Safety, Pharmacology, Physiological Adaptation.",
+  "BAR": "Civil Procedure, Con Law, Contracts, Criminal Law, Evidence, Property, Torts.",
+  "AP": "Core unit mastery and exam-specific free response prep."
 };
 
-const researchPrompt = ai.definePrompt({
+const syllabusAnalysisInputSchema = z.object({
+  examType: z.string(),
+  syllabusText: z.string().optional(),
+  websiteContent: z.string().optional(),
+});
+
+const studyPathOutputSchema = z.array(StudyPathModuleSchema);
+
+export async function analyzeSyllabusAndMatchResources(input: {
+  examType: string;
+  syllabusText?: string;
+  websiteContent?: string;
+}) {
+  return await analyzeSyllabusAndMatchResourcesFlow(input);
+}
+
+
+const researcherPrompt = ai.definePrompt({
   name: 'syllabusResearcher',
+  input: { schema: syllabusAnalysisInputSchema },
   tools: ['googleSearch'],
-  prompt: `You are a Research Assistant. Find high-quality, free study resources (like Khan Academy, YouTube, or reputable educational websites) for the following syllabus topics: {{{syllabus}}}. Also provide a brief, one-sentence description for each topic.`,
+  prompt: `
+    You are a Research Assistant.
+    Your goal is to find information about the topics covered in a given exam syllabus.
+    The user is studying for the: ${'{{examType}}'}.
+    Here is the general syllabus: ${'{{syllabusText}}'}.
+    If available, here is content from a specific paid resource they are using: ${'{{websiteContent}}'}.
+    
+    Based on all of this, provide a detailed, unstructured text of the key topics, concepts, and areas of study.
+    Do not format as JSON. Just return the raw text information.
+  `,
 });
 
 const architectPrompt = ai.definePrompt({
   name: 'studyPlanArchitect',
-  output: {
-    schema: z.array(StudyPathModuleSchema),
-  },
-  prompt: `You are a Study Plan Architect. Take the following raw text, which contains syllabus topics and suggested resources, and format it into a structured JSON array. Each object in the array must have a 'topic', a 'description', and a valid 'link'.
-
-RAW TEXT:
-{{{rawText}}}
-`,
+  input: { schema: z.object({ examType: z.string(), context: z.string() }) },
+  output: { schema: studyPathOutputSchema },
+  prompt: `
+    You are an Elite Academic Tutor.
+    Your task is to create a structured study plan with links to free, high-quality resources.
+    The study plan is for the ${'{{examType}}'} exam.
+    
+    Here is the raw data on the syllabus topics:
+    ${'{{context}}'}
+    
+    From this data, create a study plan. For each topic, provide a concise one-sentence description and a link to a helpful free resource (like Khan Academy, a YouTube video, or a reputable educational website).
+    
+    Output a JSON array of objects, where each object has 'topic', 'description', and 'link'.
+  `,
 });
 
-export async function analyzeSyllabusAndMatchResources(input: any) {
-  const exam = (input.examType || 'SAT').toUpperCase();
-  const lookupKey = exam.includes('AP') ? 'AP' : exam;
-  const syllabusContext = MASTER_SYLLABUS[lookupKey] || "General Exam Prep";
+const analyzeSyllabusAndMatchResourcesFlow = ai.defineFlow(
+  {
+    name: 'analyzeSyllabusAndMatchResourcesFlow',
+    inputSchema: syllabusAnalysisInputSchema,
+    outputSchema: studyPathOutputSchema,
+  },
+  async (input) => {
+    const exam = (input.examType || 'SAT').toUpperCase();
+    const lookupKey = exam.includes('AP') ? 'AP' : exam;
+    const syllabusContext = MASTER_SYLLABUS[lookupKey] || "General Exam Prep";
+    
+    const researcherInput = {
+      ...input,
+      syllabusText: syllabusContext,
+    };
+    
+    // Step 1: Researcher - Get raw text
+    const researcherResponse = await researcherPrompt(researcherInput);
+    const rawText = researcherResponse.text;
+    
+    console.log("--- Raw text from Researcher ---");
+    console.log(rawText);
 
-  // Step 1: The "Researcher" AI finds resources and returns raw text.
-  const researchResponse = await researchPrompt({ syllabus: syllabusContext });
-  const rawText = researchResponse.text;
+    if (!rawText || rawText.trim().length < 20) {
+        console.log("Researcher returned insufficient data. Returning empty array.");
+        return [];
+    }
 
-  console.log("=============== RESEARCHER OUTPUT (RAW TEXT) ===============");
-  console.log(rawText);
-  console.log("==========================================================");
-  
-  if (!rawText || rawText.length < 20) {
-    console.warn("Researcher returned little or no data. Aborting.");
-    return [];
+    // Step 2: Architect - Structure the raw text into JSON
+    const architectInput = {
+      examType: input.examType,
+      context: rawText,
+    };
+    
+    const { output } = await architectPrompt(architectInput);
+
+    if (!output) {
+      console.error("Architect failed to produce an output. Returning empty array.");
+      return [];
+    }
+
+    return output;
   }
-
-  // Step 2: The "Architect" AI takes the raw text and formats it into JSON.
-  const architectResponse = await architectPrompt({ rawText });
-  
-  // This can still fail if the model output is not perfect JSON, but it's less likely.
-  return architectResponse.output || [];
-}
+);

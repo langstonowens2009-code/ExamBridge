@@ -2,78 +2,92 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { StudyPathModuleSchema } from '@/ai/schemas/study-path';
 
-// 1. Define the exact dashboard shape
-const StudyPathModuleSchema = z.object({
-  topic: z.string().describe('A specific topic or unit from the syllabus.'),
-  description: z.string().describe('A one-sentence summary of what the free resource covers and why it is a good match for the topic.'),
-  link: z.string().url().describe('A direct URL to a high-quality, free resource (article, video, documentation) that covers the topic.'),
-});
+// 1. The Researcher Step: Find raw data using Google Search.
+const findSyllabusTopicsPrompt = ai.definePrompt(
+  {
+    name: 'findSyllabusTopics',
+    input: { schema: z.any() },
+    // NO output schema here - just get raw text.
+  },
+  async (input) => {
+    // Determine the query based on input type
+    const query = input.inputType === 'url' 
+      ? `Find syllabus topics from ${input.originalUrl} for the ${input.examType} exam.`
+      // For text input, the text *is* the syllabus
+      : `Here is a syllabus for the ${input.examType} exam: ${input.syllabusText}`;
+    
+    // For both cases, ask the AI to find free resources for each topic
+    return `${query} For each topic, find a high-quality free online resource (article, video, etc.). Then, provide a list of topics, their descriptions, and the URLs for the resources you found.`;
+  }
+);
 
-export type StudyPathModule = z.infer<typeof StudyPathModuleSchema>;
+// 2. The Architect Step: Format the raw text into structured JSON.
+const formatStudyPathPrompt = ai.definePrompt(
+  {
+    name: 'formatStudyPath',
+    input: { schema: z.string() },
+    output: { schema: z.array(StudyPathModuleSchema) }, // Use Zod schema for structured output
+  },
+  async (rawText) => {
+    // Instruct the AI to act as an expert curriculum designer.
+    // This prompt is highly defensive to ensure only JSON is returned.
+    return `You are an expert curriculum designer. Your ONLY task is to format the following text into a valid JSON array of objects.
+    Each object must have three string properties: "topic", "description", and "link".
+    Do not include any introductory text, explanations, or markdown code blocks. Output ONLY the raw JSON object.
+    
+    Here is the text to format:
+    "${rawText}"`;
+  }
+);
 
-export const analyzeSyllabusAndMatchResources = ai.defineFlow(
+
+// 3. The Main Flow Orchestrator
+const analyzeSyllabusAndMatchResourcesFlow = ai.defineFlow(
   {
     name: 'analyzeSyllabusAndMatchResources',
-    inputSchema: z.any(), // Keeps it flexible for different input types
+    inputSchema: z.any(),
     outputSchema: z.array(StudyPathModuleSchema),
   },
   async (input) => {
-    // Determine the source of the syllabus from the user's input
-    const syllabusSource = input.inputType === 'url' ? `the course at this URL: ${input.originalUrl}` : `the following syllabus text: "${input.syllabusText}"`;
-    const exam = input.examType || 'the requested exam';
-
-    // =================================================================
-    // STEP 1: The "Researcher" - Find syllabus topics using Google Search.
-    // This step returns ONLY raw text to avoid conflicts.
-    // =================================================================
-    const researcherResult = await ai.generate({
-      prompt: `You are a research assistant. Your goal is to find the main syllabus topics for the ${exam} from ${syllabusSource}. 
-               Focus on identifying a list of chapters, units, or key concepts.
-               Provide ONLY a list of topics. Do not add any extra text or formatting.`,
-      config: {
-        tools: [{ googleSearch: {} }],
-      },
+    // STEP 1: RESEARCHER (Web Search for raw data)
+    // This step does NOT use a JSON schema to avoid conflicts.
+    const researchResponse = await ai.generate({
+      prompt: await findSyllabusTopicsPrompt(input),
+      config: { tools: [{ googleSearch: {} }] },
+      model: 'googleai/gemini-2.0-flash', // Specify model for clarity
     });
 
-    const rawSyllabusText = researcherResult.text;
-    console.log("=============== RAW SYLLABUS TEXT FROM RESEARCHER ===============");
-    console.log(rawSyllabusText);
-    console.log("===============================================================");
+    const rawData = researchResponse.text;
+    console.log("--- Raw Research Data ---");
+    console.log(rawData);
 
-    if (!rawSyllabusText || rawSyllabusText.trim().length < 10) {
-      console.error("Researcher step failed to find a syllabus.");
-      return []; // Return empty if no syllabus was found
+    // If the researcher finds nothing, stop here.
+    if (!rawData || rawData.length < 10) {
+      return [];
     }
 
-    // =================================================================
-    // STEP 2: The "Architect" - Format the text into a JSON study plan.
-    // This step ONLY formats data and does NOT use search tools.
-    // =================================================================
-    const architectResult = await ai.generate({
-      prompt: `You are an expert curriculum designer. You will be given a raw list of topics for the ${exam} exam.
-      For each topic, find one high-quality, free, and publicly accessible online resource (like an article, video, or documentation page) that teaches that topic.
-      Then, format the results into a JSON array of objects.
-
-      Here is the raw list of topics:
-      "${rawSyllabusText}"
-      
-      IMPORTANT: Respond with ONLY the raw JSON array. Do not include any introductory text, explanations, or markdown code blocks like \`\`\`json.`,
-      output: {
-        schema: z.array(StudyPathModuleSchema),
-      },
-      config: {
-        tools: [{ googleSearch: {} }], // Allow search for finding free resources
-      }
+    // STEP 2: ARCHITECT (JSON Formatting - NO TOOLS)
+    const architectResponse = await ai.generate({
+      prompt: await formatStudyPathPrompt(rawData),
+      model: 'googleai/gemini-2.0-flash', // Use a consistent model
+      // CRITICAL: No tools are enabled here to prevent conflicts with JSON output.
+      config: { tools: [] } 
     });
 
-    const studyPath = architectResult.output;
-    if (!studyPath) {
-        console.error("Architect step failed to generate a valid study path.");
-        return [];
-    }
+    // Directly use the structured output from the Architect step
+    const studyPath = architectResponse.output;
 
-    console.log("Architect step successful. Returning study path:", studyPath);
-    return studyPath;
+    // Log the final structured data for debugging
+    console.log("--- Final Study Path ---");
+    console.log(JSON.stringify(studyPath, null, 2));
+
+    return studyPath || [];
   }
 );
+
+// 4. The Bridge (This is the only function exported to the app)
+export async function analyzeSyllabusAndMatchResources(input: any) {
+  return await analyzeSyllabusAndMatchResourcesFlow(input);
+}

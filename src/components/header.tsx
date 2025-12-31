@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { GraduationCap } from 'lucide-react';
 import { Button } from './ui/button';
+import { Dialog, DialogTrigger } from '@/components/ui/dialog';
+import { LoginModal } from './login-modal';
 
 export function Header() {
   return (
@@ -16,7 +18,12 @@ export function Header() {
           - Wire up these buttons to navigate to those pages
           - Show user avatar and a "Logout" button when logged in
         */}
-        <Button variant="outline">Log In</Button>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline">Log In</Button>
+          </DialogTrigger>
+          <LoginModal />
+        </Dialog>
         <Button>Sign Up</Button>
       </nav>
     </header>

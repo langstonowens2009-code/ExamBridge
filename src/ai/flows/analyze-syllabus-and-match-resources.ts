@@ -42,11 +42,13 @@ const analyzeSyllabusPrompt = ai.definePrompt({
     description: z.string().describe('A 1-sentence explanation of why this free link is a good substitute.'),
   }))},
   tools: [{googleSearch: {}}],
-  prompt: `You are an expert in analyzing online learning resources and identifying key topics in their syllabus.
-Your task is to use Google Search to find the public syllabus or list of topics for the course located at the following URL: {{{originalUrl}}}. Do not fetch the URL directly.
-Once you have the list of main topics, for each topic, use the provided tools to find a relevant, high-quality, and free PDF or video resource.
-The resource is for the following exam type: {{{examType}}}.
-Return a list of objects, each containing the topic, the link to the free resource, and a brief description of why it's a good match.`,
+  prompt: `You are an expert in analyzing online learning resources. Your task is to find the public syllabus or list of topics for the course located at the following URL: {{{originalUrl}}}.
+
+IMPORTANT: Do NOT fetch the content of the URL directly. Instead, use Google Search to find the public syllabus, table of contents, or curriculum for the course.
+
+Once you have the list of main topics from your search, for each topic, use your search tool again to find a relevant, high-quality, and free PDF or video resource that covers that topic. The resources should be suitable for someone studying for the '{{{examType}}}' exam.
+
+Return a list of objects, each containing the original topic, the link to the free resource you found, and a one-sentence description of why it's a good match.`,
 });
 
 const analyzeSyllabusAndMatchResourcesFlow = ai.defineFlow(

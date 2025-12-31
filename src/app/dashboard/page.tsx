@@ -1,20 +1,25 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { getStudyPlansAction } from '@/app/actions';
+import { seedResourcesAction } from '@/app/actions/seedResources';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Loader2, BookOpen, PlusCircle } from 'lucide-react';
+import { Loader2, BookOpen, PlusCircle, Rocket } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Header } from '@/components/header';
+import { useToast } from '@/hooks/use-toast';
 
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const [plans, setPlans] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     async function fetchPlans() {
@@ -45,6 +50,24 @@ export default function DashboardPage() {
     fetchPlans();
   }, [user, authLoading]);
 
+  const handleResourceSync = async () => {
+    setIsSyncing(true);
+    const result = await seedResourcesAction();
+    if (result.success) {
+        toast({
+            title: 'Sync Complete!',
+            description: `Resources synced successfully! ${result.count} records are now live in the database.`,
+        });
+    } else {
+        toast({
+            variant: 'destructive',
+            title: 'Sync Failed',
+            description: result.error || 'An unknown error occurred during sync.',
+        });
+    }
+    setIsSyncing(false);
+  };
+
   if (authLoading || loading) {
     return (
       <div className="flex flex-col min-h-screen">
@@ -68,6 +91,24 @@ export default function DashboardPage() {
         </div>
 
         {error && <div className="text-center text-destructive p-4 bg-destructive/10 rounded-md">{error}</div>}
+
+        {/* Temporary Admin Section */}
+        <Card className="mb-8 bg-secondary border-primary/20">
+            <CardHeader>
+                <CardTitle>Admin Control</CardTitle>
+                <CardDescription>Temporary controls for database management.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Button onClick={handleResourceSync} disabled={isSyncing}>
+                    {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Rocket className="mr-2 h-4 w-4"/>}
+                    {isSyncing ? 'Syncing...' : '🚀 Sync Study Resources'}
+                </Button>
+                <p className="text-sm text-muted-foreground mt-2">
+                    Click here to upload the contents of <code>src/lib/resourcesData.json</code> to the 'resources' collection in Firestore.
+                </p>
+            </CardContent>
+        </Card>
+
 
         {plans.length === 0 && !error ? (
           <div className="text-center py-20 bg-card rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center">

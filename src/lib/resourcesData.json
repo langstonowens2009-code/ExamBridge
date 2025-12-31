@@ -1,0 +1,29 @@
+
+{
+    "resources": [
+        {
+            "id": "sat_math_khan_01",
+            "category": "SAT",
+            "topic": "Math",
+            "type": "Video Course",
+            "url": "https://www.khanacademy.org/test-prep/digital-sat",
+            "description": "Official Digital SAT Prep from Khan Academy, covering all sections including Algebra, Advanced Math, and Geometry."
+        },
+        {
+            "id": "act_english_crackact_01",
+            "category": "ACT",
+            "topic": "English",
+            "type": "Practice Test",
+            "url": "https://www.crackact.com/act/english/",
+            "description": "A large collection of free ACT English practice tests, helping with grammar, punctuation, and rhetorical skills."
+        },
+        {
+            "id": "ap_bio_bozeman_01",
+            "category": "AP Biology",
+            "topic": "All Topics",
+            "type": "Video Series",
+            "url": "http://www.bozemanscience.com/ap-biology",
+            "description": "Comprehensive video tutorials by Paul Andersen covering the entire AP Biology curriculum."
+        }
+    ]
+}

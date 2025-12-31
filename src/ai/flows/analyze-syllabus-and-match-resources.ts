@@ -1,122 +1,102 @@
 'use server';
-/**
- * @fileOverview Analyzes a paid study resource URL or raw syllabus text, and matches it with free alternative resources.
- *
- * - analyzeSyllabusAndMatchResources - A function that handles the analysis and matching process.
- * - AnalyzeSyllabusInput - The input type for the analyzeSyllabusAndMatchResources function.
- * - StudyPathModule - Represents a module in the study path with a topic, link, and description.
- * - AnalyzeSyllabusOutput - The return type for the analyzeSyllabusAndMatchResources function.
- */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
-
-const AnalyzeSyllabusInputSchema = z.union([
-  z.object({
-    inputType: z.literal('url'),
-    originalUrl: z.string().describe('The URL of the paid study resource.'),
-    examType: z.string().describe('The type of exam the resource is for (e.g., SAT, ACT, USMLE).'),
-  }),
-  z.object({
-    inputType: z.literal('text'),
-    syllabusText: z.string().describe('The raw text of the syllabus.'),
-    examType: z.string().describe('The type of exam the resource is for (e.g., SAT, ACT, USMLE).'),
-  }),
-]);
-export type AnalyzeSyllabusInput = z.infer<typeof AnalyzeSyllabusInputSchema>;
-
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 
 const StudyPathModuleSchema = z.object({
-  topic: z.string().describe('The topic name from the paid resource.'),
-  link: z.string().describe('A link to a free alternative resource.'),
-  description: z.string().describe('A 1-sentence explanation of why this free link is a good substitute.'),
-});
-export type StudyPathModule = z.infer<typeof StudyPathModuleSchema>;
-
-const AnalyzeSyllabusOutputSchema = z.array(StudyPathModuleSchema);
-export type AnalyzeSyllabusOutput = z.infer<typeof AnalyzeSyllabusOutputSchema>;
-
-export async function analyzeSyllabusAndMatchResources(
-  input: AnalyzeSyllabusInput
-): Promise<AnalyzeSyllabusOutput> {
-  return analyzeSyllabusAndMatchResourcesFlow(input);
-}
-
-// Step 1: The Researcher - Find Raw Syllabus Topics (only if input is a URL)
-const findSyllabusTopicsPrompt = ai.definePrompt({
-  name: 'findSyllabusTopicsPrompt',
-  input: {schema: z.object({
-    originalUrl: z.string().describe('The URL of the paid study resource.'),
-    examType: z.string().describe('The type of exam the resource is for (e.g., SAT, ACT, USMLE).'),
-  })},
-  tools: [{googleSearch: {}}],
-  prompt: `You are an expert in analyzing online learning resources. Your task is to find the public syllabus or list of main topics for the course located at the following URL: {{{originalUrl}}}.
-
-IMPORTANT: Do NOT fetch the content of the URL directly. Instead, use your Google Search tool to find the public syllabus, table of contents, or curriculum for the course.
-
-Return only a list of the main topics you find, separated by newlines. Do not include any other information or formatting.`,
+  topic: z.string().describe('The name of the study topic or module.'),
+  description: z
+    .string()
+    .describe('A brief, one-sentence description of the free resource.'),
+  link: z
+    .string()
+    .url()
+    .describe('A direct link to the free study resource.'),
 });
 
-// Step 2: The Architect - Format and Find Resources
-const formatStudyPathPrompt = ai.definePrompt({
-  name: 'formatStudyPathPrompt',
-  input: {schema: z.object({
-    syllabusTopics: z.string(),
-    examType: z.string(),
-  })},
-  output: { schema: AnalyzeSyllabusOutputSchema },
-  tools: [{googleSearch: {}}],
-  prompt: `You are an expert curriculum designer. You have been given a list of syllabus topics. For each topic, use your search tool to find a relevant, high-quality, and free PDF or video resource that covers that topic. The resources should be suitable for someone studying for the '{{{examType}}}' exam.
+const StudyPlanSchema = z.array(StudyPathModuleSchema);
 
-Syllabus Topics:
-{{{syllabusTopics}}}
-
-Your response MUST be a valid JSON array that conforms to the output schema. Do not include any introductory text or markdown code blocks. Output ONLY the raw JSON object.
-`,
-});
-
-
-const analyzeSyllabusAndMatchResourcesFlow = ai.defineFlow(
+export const analyzeSyllabusAndMatchResources = ai.defineFlow(
   {
-    name: 'analyzeSyllabusAndMatchResourcesFlow',
-    inputSchema: AnalyzeSyllabusInputSchema,
-    outputSchema: AnalyzeSyllabusOutputSchema,
+    name: 'analyzeSyllabusAndMatchResources',
+    inputSchema: z.any(), // Accepts the union object from your UI
+    outputSchema: StudyPlanSchema,
   },
   async (input) => {
-    let rawSyllabusTopics: string;
+    const exam = input.examType || 'the requested exam';
+    let syllabusSource: string;
 
-    if (input.inputType === 'url') {
-      // Step 1: Get raw syllabus topics as plain text from URL.
-      const researcherResponse = await findSyllabusTopicsPrompt({ originalUrl: input.originalUrl, examType: input.examType });
-      rawSyllabusTopics = researcherResponse.text;
-      
-      if (!rawSyllabusTopics) {
-        console.log("Step 1 (Researcher) failed: No syllabus topics found for URL.");
-        // Return an empty array. The frontend action will handle the specific user-facing error message.
-        return [];
-      }
-      console.log("Step 1 (Researcher) Success: Found raw topics from URL:", rawSyllabusTopics);
+    // Use provided text directly if it exists.
+    if (input.inputType === 'text' && input.syllabusText) {
+      syllabusSource = input.syllabusText;
     } else {
-      // Input is already raw text, skip step 1.
-      rawSyllabusTopics = input.syllabusText;
-      console.log("Step 1 (Researcher) Skipped: Using provided raw syllabus text.");
+      // STEP 1: The Researcher - Find the raw syllabus text using Google Search.
+      const researchPrompt = `You are an expert academic researcher. Your task is to find the syllabus or table of contents for the exam preparation course found at the following source: ${input.originalUrl}. 
+      Using your search tool, find the main topics and return them as a simple, unformatted text list. Do not include anything else in your response.`;
+      
+      const researcher = await ai.generate({
+        prompt: researchPrompt,
+        config: {
+          tools: [{ googleSearch: {} }],
+        },
+      });
+
+      syllabusSource = researcher.text;
     }
-
-
-    // Step 2: Pass the raw text to the formatting prompt (The Architect).
-    const architectResponse = await formatStudyPathPrompt({
-      syllabusTopics: rawSyllabusTopics,
-      examType: input.examType,
-    });
     
-    const output = architectResponse.output;
+    // Log the raw text for debugging.
+    console.log('--- Raw Syllabus Text from Researcher ---');
+    console.log(syllabusSource);
+    console.log('------------------------------------');
 
-    if (!output) {
-      console.log("Step 2 (Architect) failed: AI did not return a valid structured output.");
+    if (!syllabusSource) {
+      console.error('Researcher step failed to return any text.');
       return [];
     }
+    
+    // STEP 2: The Architect - Format the raw text into a structured JSON study plan.
+    const formatPrompt = `You are an expert curriculum designer. Take the following raw syllabus text and transform it into a JSON array of study modules for a student preparing for the ${exam}.
+    For each topic in the syllabus, you must use your search tool to find a high-quality, free, and publicly accessible online resource (like an article, video, or PDF) that covers the topic.
+    
+    Your final output MUST be a valid JSON array of objects, where each object has three properties: "topic", "description", and "link".
+    - "topic": The name of the study topic.
+    - "description": A concise, one-sentence summary of what the free resource covers.
+    - "link": The direct URL to the free resource.
 
-    console.log("Step 2 (Architect) Success: Formatted study path:", output);
-    return output;
+    Do not include any introductory text, explanations, or markdown code blocks around the JSON. Your response must be ONLY the raw JSON array.
+
+    Raw Syllabus Text:
+    """
+    ${syllabusSource}
+    """`;
+
+    const architect = await ai.generate({
+      prompt: formatPrompt,
+      output: {
+        schema: StudyPlanSchema,
+      },
+      config: {
+        tools: [{ googleSearch: {} }],
+      },
+    });
+
+    const studyPlan = architect.output;
+
+    if (!studyPlan) {
+      console.error('Architect step failed to generate a study plan.');
+      return [];
+    }
+    
+    // Defensive parsing just in case the model returns a string despite the schema.
+    if (typeof studyPlan === 'string') {
+      try {
+        return JSON.parse(studyPlan);
+      } catch (e) {
+        console.error('Failed to parse study plan string from AI:', e);
+        return [];
+      }
+    }
+
+    return studyPlan;
   }
 );

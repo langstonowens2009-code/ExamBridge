@@ -7,7 +7,4 @@ export const ai = genkit({
       location: 'global',
     }) 
   ],
-  // Explicitly using the string ID prevents the editor from trying 
-  // to 'look up' the model object, which clears that vertical red line.
-  model: 'googleai/gemini-pro', 
 });

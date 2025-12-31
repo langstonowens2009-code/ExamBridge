@@ -10,7 +10,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {googleSearch} from '@genkit-ai/google-genai';
 
 const AnalyzeSyllabusInputSchema = z.object({
   originalUrl: z.string().describe('The URL of the paid study resource.'),
@@ -42,7 +41,7 @@ const analyzeSyllabusPrompt = ai.definePrompt({
     link: z.string().describe('A link to a free alternative resource.'),
     description: z.string().describe('A 1-sentence explanation of why this free link is a good substitute.'),
   }))},
-  tools: [googleSearch],
+  tools: [{googleSearch: {}}],
   prompt: `You are an expert in analyzing online learning resources and identifying key topics in their syllabus.
 Your task is to analyze the content of the following URL: {{{originalUrl}}} and extract a list of the main topics covered.
 The resource is for the following exam type: {{{examType}}}.

@@ -40,12 +40,7 @@ export async function generateStudyPathAction(data: z.infer<typeof formSchema>):
     return { success: true, data: studyPath };
   } catch (error: any) {
     // Detailed logging
-    console.error("Error in generateStudyPathAction:", {
-      status: error.status,
-      reason: error.reason,
-      message: error.message,
-      stack: error.stack,
-    });
+    console.error("Error in generateStudyPathAction:", error);
 
     // This is a user-facing error. Be careful not to leak implementation details.
     return { success: false, error: "An unexpected error occurred while analyzing the syllabus. The AI may be unavailable." };

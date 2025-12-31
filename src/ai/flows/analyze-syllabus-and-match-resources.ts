@@ -69,21 +69,15 @@ export async function analyzeSyllabusAndMatchResources(
         } catch (scrapeError) {
             console.warn(`Scraping failed for ${originalUrl}. Initiating fallback.`, scrapeError);
             
-            // If there are specific instructions, we can ignore the link and focus on those.
-            if (customInstructions) {
-                paidResourceTopics = `PRIORITY: The user has provided custom instructions to focus on specific areas. The original URL failed to load. Base the plan primarily on the user's request for the ${examType} exam.`;
-                fallbackNote = `Note: I couldn't scan that specific page, but I've built this plan to focus on your specific goals for the ${examType} exam.`;
-            } else {
-                // Fallback Step: The "Curriculum Detective" - Infer content from search.
-                console.log(`Performing fallback search for: ${siteName} ${examType} curriculum and features`);
-                const fallbackSearch = await ai.generate({
-                    model: 'gemini-1.5-flash',
-                    tools: [googleSearch],
-                    prompt: `You are a Curriculum Detective. A user wants to know what the paid resource '${siteName}' covers for the '${examType}' exam. Perform a targeted search for '${siteName} ${examType} curriculum and features'. Based on the search results, create a concise, summarized list of the likely topics and features this paid resource offers.`,
-                });
-                paidResourceTopics = fallbackSearch.text;
-                fallbackNote = `Note: I couldn't scan that specific page, so I built this plan based on ${siteName}’s general curriculum and your goals.`;
-            }
+            // Fallback Step: The "Curriculum Detective" - Infer content from search.
+            console.log(`Performing fallback search for: ${siteName} ${examType} curriculum and features`);
+            const fallbackSearch = await ai.generate({
+                model: 'gemini-1.5-flash',
+                tools: [googleSearch],
+                prompt: `You are a Curriculum Detective. A user wants to know what the paid resource '${siteName}' covers for the '${examType}' exam. Perform a targeted search for '${siteName} ${examType} syllabus and table of contents'. Based on the search results, create a concise, summarized list of the likely topics and features this paid resource offers.`,
+            });
+            paidResourceTopics = fallbackSearch.text;
+            fallbackNote = `Note: That specific page is private, so I’ve built a custom plan based on ${siteName}’s standard ${examType} curriculum and your specific goals.`;
         }
     } else if (syllabusText) {
         paidResourceTopics = syllabusText;

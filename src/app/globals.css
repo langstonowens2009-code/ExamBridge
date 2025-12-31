@@ -4,9 +4,9 @@
 
 @layer base {
   :root {
-    --background: 222.2 84% 4.9%;
+    --background: 220 9% 10%; /* #18191c */
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+    --card: 220 9% 16%; /* #25282c */
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
@@ -21,15 +21,15 @@
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --input: 220 9% 11%; /* #1a1c1e */
     --ring: 224.3 76.3% 48%;
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 240 9% 6%; /* #0a0a0c */
+    --background: 220 9% 10%; /* #18191c */
     --foreground: 210 40% 98%;
-    --card: 222 39% 23%; /* #1e293b */
+    --card: 220 9% 16%; /* #25282c */
     --card-foreground: 210 40% 98%;
     --popover: 240 1% 4%;
     --popover-foreground: 210 40% 98%;
@@ -44,7 +44,7 @@
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
     --border: 260 100% 75% / 0.1; /* border-primary/10 */
-    --input: 217.2 32.6% 17.5%;
+    --input: 220 9% 11%; /* #1a1c1e */
     --ring: 260 100% 75%;
   }
 }
@@ -55,6 +55,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image: radial-gradient(circle, hsl(var(--background)) 50%, #121417 100%);
   }
 }
 
@@ -63,6 +64,7 @@
   body {
     background-color: white;
     color: black;
+    background-image: none;
   }
   .no-print {
     display: none;

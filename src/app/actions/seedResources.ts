@@ -1,8 +1,7 @@
 
 'use server';
 
-import { getFirestore, doc, writeBatch } from 'firebase/firestore';
-import { app } from '@/firebase/config';
+import { db } from '@/lib/firebaseAdmin';
 import resourcesData from '@/lib/resourcesData.json';
 
 type ActionResult = {
@@ -14,19 +13,18 @@ type ActionResult = {
 export async function seedResourcesAction(): Promise<ActionResult> {
   try {
     console.log('Seeding started...');
-    const db = getFirestore(app);
     const resources = resourcesData.resources;
 
     if (!resources || resources.length === 0) {
       return { success: false, error: 'No resources found in resourcesData.json' };
     }
     
-    // Use a batch write for efficiency
-    const batch = writeBatch(db);
+    // Use a batch write for efficiency with the Admin SDK
+    const batch = db.batch();
     
     resources.forEach(resource => {
       // Use the 'id' from the JSON file as the document ID to prevent duplicates
-      const resourceRef = doc(db, 'resources', resource.id);
+      const resourceRef = db.collection('resources').doc(resource.id);
       batch.set(resourceRef, resource);
     });
     

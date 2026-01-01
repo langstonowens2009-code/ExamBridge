@@ -16,6 +16,8 @@ if (!admin.apps.length) {
     credential: admin.credential.cert(serviceAccount),
     projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   });
+  console.log('Firebase Admin SDK initialized.');
+  console.log('Project ID used:', admin.app().options.projectId);
 }
 
 export const db = admin.firestore();

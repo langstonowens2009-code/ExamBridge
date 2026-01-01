@@ -3,8 +3,8 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { WeeklyStudyPathModuleSchema } from '@/ai/schemas/study-path';
-import { googleSearch, browse } from '@genkit-ai/google-genai';
 import syllabusData from '@/lib/syllabusData.json';
+import { db } from '@/lib/firebaseAdmin'; // Import the admin DB instance
 
 const formInputSchema = z.object({
   examType: z.string(),
@@ -37,9 +37,8 @@ type SyllabusData = {
 const localSyllabusData = syllabusData as SyllabusData;
 
 /**
- * Acts as a Strategic Personal Tutor. It analyzes a syllabus (from a local JSON file first), 
- * considers user goals, and builds a supplementary study plan using free resources.
- * If the exam type is not in the local data, it uses a fallback strategy to search online.
+ * Acts as a Strategic Personal Tutor. It analyzes a syllabus (from a local JSON file first),
+ * considers user goals, and builds a supplementary study plan using resources from a Firestore database.
  */
 export async function analyzeSyllabusAndMatchResources(
   input: z.infer<typeof formInputSchema>
@@ -57,37 +56,35 @@ export async function analyzeSyllabusAndMatchResources(
         console.log(`Found '${examType}' in local syllabus data. Using it as the primary blueprint.`);
         syllabusContent = JSON.stringify(selectedSyllabus, null, 2);
         planSourceNote = `This plan is structured based on the standard curriculum for the ${selectedSyllabus.name}.`;
-
-        // If a URL is provided, use it for supplementary context only.
-        if (originalUrl) {
-            try {
-                const analysisResult = await ai.generate({
-                    model: 'gemini-1.5-pro-latest',
-                    tools: [browse],
-                    prompt: `A user is studying for the ${examType}. Their primary curriculum is attached. The user has also provided this URL: ${originalUrl}. Briefly analyze the URL to see if it provides any specific details (like a course schedule, specific problem sets, or a unique teaching focus) that might supplement the main curriculum. Summarize your findings in a few sentences.`,
-                });
-                const supplementaryContext = analysisResult.text;
-                syllabusContent += `\n\nSupplementary Context from URL: ${supplementaryContext}`;
-                planSourceNote += ` I have also incorporated supplementary details from the provided URL.`;
-            } catch (scrapeError) {
-                console.warn(`Could not scrape supplementary URL ${originalUrl}. Proceeding with local data only.`);
-                planSourceNote += ` I was unable to access the supplementary URL provided, so the plan is based on the standard curriculum.`;
-            }
-        }
     } else {
-        console.log(`'${examType}' not found in local data. Using fallback online search.`);
-        planSourceNote = `Since a standard curriculum for '${examType}' was not pre-configured, I have built this plan based on a dynamic web search for the best resources.`;
-        
-        // Fallback: Use the original logic if exam type is not in our JSON
-        const fallbackSearch = await ai.generate({
-            model: 'gemini-1.5-pro-latest',
-            tools: [googleSearch],
-            prompt: `You are a Curriculum Detective. A user wants to study for the '${examType}' exam. Perform a targeted search for a typical syllabus, curriculum, and table of contents for the '${examType}'. Based on the search results, create a concise, summarized list of the likely topics and core concepts.`,
-        });
-        syllabusContent = fallbackSearch.text;
+        // This block will now primarily handle AP classes or other types not in the main JSON
+        console.log(`'${examType}' not found in local data. Using it as a topic keyword.`);
+        planSourceNote = `This plan is structured based on a custom search for the '${examType}' exam.`;
+        syllabusContent = `The user wants to create a study plan for the exam: '${examType}'. Please structure a 4-week study plan for this exam.`;
     }
+
+    // Step 2: Fetch relevant resources from Firestore
+    console.log(`Querying Firestore for resources with category matching: ${examType}`);
+    const resourcesSnapshot = await db.collection('resources').where('category', '==', examType).get();
+    const availableResources = resourcesSnapshot.docs.map(doc => doc.data());
     
-    console.log(`Syllabus Content for AI: ${syllabusContent}`);
+    let resourcesContext: string;
+    if (availableResources.length > 0) {
+        console.log(`Found ${availableResources.length} resources in Firestore.`);
+        resourcesContext = `
+            Here is a list of available, high-quality, free study resources from our database.
+            You MUST use these resources to build the study plan. For each module you create, you MUST provide a direct link to one of these resources.
+            
+            Available Resources:
+            ${JSON.stringify(availableResources, null, 2)}
+        `;
+    } else {
+        console.log(`No resources found in Firestore for category: ${examType}. The AI will have to find its own.`);
+        resourcesContext = `
+            No pre-vetted resources were found in our database for this topic. You will need to find appropriate free resources on the web to build the study plan.
+            For each module you create, find and provide a direct link to a high-quality, free resource.
+        `;
+    }
 
     // Create a timeline prompt if a test date is provided.
     let timelinePrompt = `Create a study plan organized by week. A standard plan is 4 weeks, but adjust if the user's test date suggests a different timeline.`;
@@ -99,17 +96,18 @@ export async function analyzeSyllabusAndMatchResources(
       timelinePrompt = `The user's test is on ${testDate.toLocaleDateString()}. They have ${daysLeft} days (${weeksLeft} full weeks) to prepare. Create a weekly study plan that fits this timeline.`;
     }
 
-    // Step 2: The "Study Plan Architect" - Synthesize and build the plan.
+    // Step 3: The "Study Plan Architect" - Synthesize and build the plan.
     const architectResult = await ai.generate({
       model: 'gemini-1.5-pro-latest',
-      tools: [googleSearch],
+      // REMOVED `tools` property to prevent web search
       prompt: `
-        You are a Strategic Personal Tutor. Your task is to create a personalized, weekly study plan by finding the best free, high-authority study materials online.
+        You are a Strategic Personal Tutor. Your task is to create a personalized, weekly study plan using the provided resources.
 
         Your Process:
         1.  **Analyze the Curriculum:** Review the provided syllabus structure. This is your primary blueprint.
-        2.  **Adhere to User Instructions:** Carefully follow the user's custom instructions. This is your highest priority.
-        3.  **Synthesize the Plan:** Construct the weekly study plan. Each module in your plan must have a clear topic, a direct link to a free resource, and a description explaining WHY this resource is a good fit.
+        2.  **Use Provided Resources:** Build the study plan using ONLY the list of available resources provided below. This is a strict requirement.
+        3.  **Adhere to User Instructions:** Carefully follow the user's custom instructions.
+        4.  **Synthesize the Plan:** Construct the weekly study plan. Each module in your plan must have a clear topic, a direct link to a resource from the provided list, and a description explaining WHY this resource is a good fit.
         
         ${timelinePrompt}
 
@@ -123,8 +121,11 @@ export async function analyzeSyllabusAndMatchResources(
         HERE IS THE CURRICULUM:
         ${syllabusContent}
 
+        HERE ARE THE ONLY RESOURCES YOU ARE ALLOWED TO USE:
+        ${resourcesContext}
+
         User's Custom Instructions:
-        ${customInstructions || 'No custom instructions provided. Focus on creating a balanced, comprehensive plan.'}
+        ${customInstructions || 'No custom instructions provided. Focus on creating a balanced, comprehensive plan using the given resources.'}
       `,
       output: {
         schema: studyPathOutputSchema,
@@ -149,7 +150,7 @@ export async function analyzeSyllabusAndMatchResources(
   } catch (error) {
     console.error("Error in analyzeSyllabusAndMatchResources flow:", error);
     // Check if the error is a timeout error
-    if (error instanceof Error && error.message.includes('DEADLINE_EXCEEDED')) {
+    if (error instanceof Error && (error.message.includes('DEADLINE_EXCEEDED') || error.message.includes('timeout'))) {
         return fallbackResult;
     }
     return fallbackResult;

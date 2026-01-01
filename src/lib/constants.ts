@@ -1,7 +1,6 @@
 export const EXAM_CATEGORIES = [
   "SAT",
   "ACT",
-  "GRE",
   "AP Classes",
 ];
 

@@ -35,30 +35,5 @@
             { "name": "Reading", "weight": 0.25, "units": [{"topic": "Key Ideas and Details"}, {"topic": "Craft and Structure"}, {"topic": "Integration of Knowledge and Ideas"}] },
             { "name": "Science", "weight": 0.25, "units": [{"topic": "Interpretation of Data"}, {"topic": "Scientific Investigation"}, {"topic": "Evaluation of Models, Inferences, and Experimental Results"}] }
         ]
-    },
-    "GRE": {
-        "name": "Graduate Record Examinations (GRE)",
-        "description": "A standardized test that is an admissions requirement for many graduate schools in the United States and Canada.",
-        "sections": [
-            { 
-                "name": "Verbal Reasoning", 
-                "weight": 0.5, 
-                "units": [
-                    {"topic": "Reading Comprehension", "subtopics": ["Analyze and draw conclusions from discourse", "Identify assumptions and perspectives", "Understand multiple levels of meaning"]},
-                    {"topic": "Text Completion", "subtopics": ["Analyze a sentence or passage", "Select appropriate words to fill blanks"]},
-                    {"topic": "Sentence Equivalence", "subtopics": ["Select two words that produce sentences alike in meaning"]}
-                ]
-            },
-            { 
-                "name": "Quantitative Reasoning", 
-                "weight": 0.5, 
-                "units": [
-                    {"topic": "Arithmetic", "subtopics": ["Properties of integers", "Fractions, decimals, percentages", "Ratios and proportions"]},
-                    {"topic": "Algebra", "subtopics": ["Exponents and roots", "Solving linear and quadratic equations", "Coordinate geometry"]},
-                    {"topic": "Geometry", "subtopics": ["Properties of triangles, circles, and other polygons", "Three-dimensional figures"]},
-                    {"topic": "Data Analysis", "subtopics": ["Measures of central tendency", "Probability", "Data interpretation from graphs and tables"]}
-                ]
-            }
-        ]
     }
 }

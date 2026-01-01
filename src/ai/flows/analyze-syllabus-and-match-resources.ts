@@ -5,7 +5,6 @@ import { z } from 'genkit';
 import { WeeklyStudyPathModuleSchema } from '@/ai/schemas/study-path';
 import syllabusData from '@/lib/syllabusData.json';
 import { db } from '@/lib/firebaseAdmin'; // Use the server-side admin SDK
-import { AP_CLASSES } from '@/lib/constants';
 import { googleSearch, browse } from '@genkit-ai/google-genai';
 
 const formInputSchema = z.object({
@@ -54,7 +53,6 @@ export async function analyzeSyllabusAndMatchResources(
 
     // Step 1: Prioritize local syllabus data or create a simple topic prompt.
     const selectedSyllabus = localSyllabusData[examType];
-    const isApClass = AP_CLASSES.includes(examType);
 
     if (selectedSyllabus) {
         console.log(`Found '${examType}' in local syllabus data. Using it as the primary blueprint.`);
@@ -93,13 +91,13 @@ export async function analyzeSyllabusAndMatchResources(
         4.  **Synthesize the Plan:** Construct the weekly study plan. Each module in your plan must have a clear topic, a direct link to a resource, and a description explaining WHY this resource is a good fit.
         `;
     } else {
-        console.log(`No resources found for '${examType}'. Falling back to web search.`);
+        console.log(`No resources found for '${examType}' in Firestore. Falling back to web search.`);
         resourcesContext = `No pre-vetted resources were found in our database for this topic.`;
         toolsToUse = [googleSearch, browse];
         promptInstructions = `
         Your Process:
         1.  **Analyze the Curriculum:** Review the provided syllabus structure.
-        2.  **Find Resources Online:** You must find appropriate free resources on the web to build the study plan. Use your search tools for this.
+        2.  **Find Resources Online:** You must find 3-5 high-quality, free study websites to build the study plan. Use your search tools for this.
         3.  **Adhere to User Instructions:** Carefully follow the user's custom instructions.
         4.  **Synthesize the Plan:** Construct the weekly study plan. For each module you create, you must provide a direct link to a high-quality, free resource. This is a critical requirement.
         `;
@@ -130,6 +128,7 @@ export async function analyzeSyllabusAndMatchResources(
         - Format your final output as a clean JSON array of weekly study modules.
         - Each object in the array must have a 'week' property and a 'modules' array.
         - Each module object must have 'topic', 'description', and 'link'.
+        - If provided with database resources, use those first. If not, use your search tool to find 3-5 high-quality free study websites for this exam.
         - Prepend the following note to the 'description' of the very FIRST module in your plan: "${planSourceNote}"
         - Only output the final JSON array. Do not include any other text or markdown.
 
@@ -146,7 +145,7 @@ export async function analyzeSyllabusAndMatchResources(
       },
       config: {
         requestOptions: {
-            timeout: 50000 // 50 seconds
+            timeout: 55000 // 55 seconds
         }
       }
     });

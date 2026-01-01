@@ -62,7 +62,7 @@ export async function analyzeSyllabusAndMatchResources(
         if (originalUrl) {
             try {
                 const analysisResult = await ai.generate({
-                    model: 'gemini-1.5-flash',
+                    model: 'gemini-1.5-pro-latest',
                     tools: [browse],
                     prompt: `A user is studying for the ${examType}. Their primary curriculum is attached. The user has also provided this URL: ${originalUrl}. Briefly analyze the URL to see if it provides any specific details (like a course schedule, specific problem sets, or a unique teaching focus) that might supplement the main curriculum. Summarize your findings in a few sentences.`,
                 });
@@ -80,7 +80,7 @@ export async function analyzeSyllabusAndMatchResources(
         
         // Fallback: Use the original logic if exam type is not in our JSON
         const fallbackSearch = await ai.generate({
-            model: 'gemini-1.5-flash',
+            model: 'gemini-1.5-pro-latest',
             tools: [googleSearch],
             prompt: `You are a Curriculum Detective. A user wants to study for the '${examType}' exam. Perform a targeted search for a typical syllabus, curriculum, and table of contents for the '${examType}'. Based on the search results, create a concise, summarized list of the likely topics and core concepts.`,
         });
@@ -101,7 +101,7 @@ export async function analyzeSyllabusAndMatchResources(
 
     // Step 2: The "Study Plan Architect" - Synthesize and build the plan.
     const architectResult = await ai.generate({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-1.5-pro-latest',
       tools: [googleSearch],
       prompt: `
         You are a Strategic Personal Tutor. Your task is to create a personalized, weekly study plan by finding the best free, high-authority study materials online.

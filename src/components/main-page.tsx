@@ -326,7 +326,7 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
                                         <Card className="shadow-sm border-border/50 rounded-xl h-full">
                                           <CardHeader>
                                             <CardTitle>3. The Content</CardTitle>
-                                            <FormDescription>What are you most worried about?</FormDescription>
+                                            <FormDescription>What would you like to practice?</FormDescription>
                                           </CardHeader>
                                           <CardContent>
                                                 {fields.map((field, index) => (

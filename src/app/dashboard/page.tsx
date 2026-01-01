@@ -56,7 +56,7 @@ export default function DashboardPage() {
     if (result.success) {
         toast({
             title: 'Sync Complete!',
-            description: `Resources synced successfully! ${result.count} records are now live in the database.`,
+            description: `Resources synced successfully! ${result.count} records are now live.`,
         });
     } else {
         toast({
@@ -99,9 +99,9 @@ export default function DashboardPage() {
                 <CardDescription>Temporary controls for database management.</CardDescription>
             </CardHeader>
             <CardContent>
-                <Button onClick={handleResourceSync} disabled={isSyncing}>
+                <Button onClick={handleResourceSync} disabled={isSyncing} className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg p-6">
                     {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Rocket className="mr-2 h-4 w-4"/>}
-                    {isSyncing ? 'Syncing...' : '🚀 Sync Study Resources'}
+                    {isSyncing ? 'Syncing...' : '🚀 Initial Database Sync'}
                 </Button>
                 <p className="text-sm text-muted-foreground mt-2">
                     Click here to upload the contents of <code>src/lib/resourcesData.json</code> to the 'resources' collection in Firestore.

@@ -1,7 +1,7 @@
 
 'use server';
 
-import { getFirestore, collection, doc, setDoc, writeBatch } from 'firebase/firestore';
+import { getFirestore, doc, writeBatch } from 'firebase/firestore';
 import { app } from '@/firebase/config';
 import resourcesData from '@/lib/resourcesData.json';
 

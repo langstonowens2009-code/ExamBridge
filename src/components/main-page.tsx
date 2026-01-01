@@ -211,7 +211,7 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
                                                 name="examType"
                                                 render={({ field }) => (
                                                     <FormItem className="w-full md:w-2/3">
-                                                        <FormLabel className="font-semibold text-lg mb-2 block">1. Select Your Exam</FormLabel>
+                                                        <FormLabel className="font-semibold text-lg mb-2 block text-left">1. Select Your Exam</FormLabel>
                                                         <Popover>
                                                             <PopoverTrigger asChild>
                                                                 <FormControl>
@@ -274,152 +274,153 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
                                     
                                     {selectedExamType && (
                                         <>
-                                        {/* Date and Study Days */}
                                         <div className="grid md:grid-cols-2 gap-8 items-start">
-                                            <FormField
-                                                control={form.control}
-                                                name="testDate"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex flex-col items-center">
-                                                    <FormLabel className="mb-2 text-left w-full font-semibold text-lg">2. When is your test?</FormLabel>
-                                                    <Popover>
-                                                        <PopoverTrigger asChild>
-                                                        <FormControl>
-                                                            <Button
-                                                            variant={"outline"}
-                                                            className={cn(
-                                                                "w-full pl-3 text-left font-normal h-12 text-base bg-[#F9FAFB]",
-                                                                !field.value && "text-muted-foreground"
-                                                            )}
-                                                            >
-                                                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                            </Button>
-                                                        </FormControl>
-                                                        </PopoverTrigger>
-                                                        <PopoverContent className="w-auto p-0" align="center">
-                                                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date(new Date().setDate(new Date().getDate()))} initialFocus />
-                                                        </PopoverContent>
-                                                    </Popover>
-                                                    <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                             <FormField
-                                                control={form.control}
-                                                name="availableStudyDays"
-                                                render={() => (
-                                                    <FormItem>
-                                                        <div className="mb-4">
-                                                            <FormLabel className="font-semibold text-lg">3. Your study days?</FormLabel>
-                                                        </div>
-                                                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                                                        {DAYS_OF_WEEK.map((day) => (
-                                                            <FormField
-                                                                key={day}
-                                                                control={form.control}
-                                                                name="availableStudyDays"
-                                                                render={({ field }) => {
-                                                                    return (
-                                                                    <FormItem key={day} className="flex flex-row items-start space-x-2 space-y-0">
-                                                                        <FormControl>
-                                                                            <Checkbox
-                                                                                checked={field.value?.includes(day)}
-                                                                                onCheckedChange={(checked) => {
-                                                                                    return checked
-                                                                                        ? field.onChange([...field.value, day])
-                                                                                        : field.onChange( field.value?.filter( (value) => value !== day ) )
-                                                                                }}
-                                                                            />
-                                                                        </FormControl>
-                                                                        <FormLabel className="font-normal">{day.substring(0,3)}</FormLabel>
-                                                                    </FormItem>
-                                                                    )
-                                                                }}
-                                                            />
-                                                        ))}
-                                                        </div>
+                                            {/* Left Column: Date and Days */}
+                                            <div className="space-y-8">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="testDate"
+                                                    render={({ field }) => (
+                                                        <FormItem className="flex flex-col items-start">
+                                                        <FormLabel className="mb-2 w-full font-semibold text-lg text-left">2. When is your test?</FormLabel>
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                            <FormControl>
+                                                                <Button
+                                                                variant={"outline"}
+                                                                className={cn(
+                                                                    "w-full pl-3 text-left font-normal h-12 text-base bg-[#F9FAFB]",
+                                                                    !field.value && "text-muted-foreground"
+                                                                )}
+                                                                >
+                                                                {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                                </Button>
+                                                            </FormControl>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-auto p-0" align="start">
+                                                            <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date(new Date().setDate(new Date().getDate()))} initialFocus />
+                                                            </PopoverContent>
+                                                        </Popover>
                                                         <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
-                                        
-                                        {/* Topics Section */}
-                                        <div>
-                                            <FormLabel className="font-semibold text-lg text-left w-full mb-2 block">4. What topics do you want to study?</FormLabel>
-                                            <Card className="bg-muted/50 p-4 space-y-4">
-                                                {fields.map((field, index) => (
-                                                    <div key={field.id} className="flex items-center gap-2 bg-background p-2 rounded-md">
-                                                        <Controller
-                                                            name={`topics.${index}.topic`}
-                                                            control={form.control}
-                                                            render={({ field: controllerField }) => (
-                                                                 <Popover>
-                                                                    <PopoverTrigger asChild>
-                                                                        <Button variant="outline" className="w-full justify-between font-normal">
-                                                                            {controllerField.value || "Select a Topic"}
-                                                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                                        </Button>
-                                                                    </PopoverTrigger>
-                                                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                                                        <Command>
-                                                                            <CommandInput placeholder="Search topic..." />
-                                                                            <CommandEmpty>No topic found.</CommandEmpty>
-                                                                            <CommandList>
-                                                                               <ScrollArea className="h-72">
-                                                                                {syllabusTopics.map((group) => (
-                                                                                    <CommandGroup key={group.section} heading={group.section}>
-                                                                                        {group.topics.map((topic) => (
-                                                                                             <CommandItem
-                                                                                                key={topic}
-                                                                                                onSelect={() => {
-                                                                                                    form.setValue(`topics.${index}.topic`, topic);
-                                                                                                    const popoverTrigger = document.querySelector(`[aria-controls^="radix-popover-content-"][data-state="open"]`);
-                                                                                                    popoverTrigger?.dispatchEvent(new Event('click', { bubbles: true }))
-                                                                                                }}
-                                                                                                >
-                                                                                                <Check className={cn("mr-2 h-4 w-4", topic === controllerField.value ? "opacity-100" : "opacity-0")} />
-                                                                                                {topic}
-                                                                                             </CommandItem>
-                                                                                        ))}
-                                                                                    </CommandGroup>
-                                                                                ))}
-                                                                                </ScrollArea>
-                                                                            </CommandList>
-                                                                        </Command>
-                                                                    </PopoverContent>
-                                                                </Popover>
-                                                            )}
-                                                        />
-                                                        
-                                                        <Controller
-                                                            name={`topics.${index}.difficulty`}
-                                                            control={form.control}
-                                                            defaultValue="Easy"
-                                                            render={({ field: controllerField }) => (
-                                                                <Select onValueChange={controllerField.onChange} defaultValue={controllerField.value}>
-                                                                    <SelectTrigger className="w-[120px]">
-                                                                        <SelectValue placeholder="Difficulty" />
-                                                                    </SelectTrigger>
-                                                                    <SelectContent>
-                                                                        <SelectItem value="Easy">Easy</SelectItem>
-                                                                        <SelectItem value="Hard">Hard</SelectItem>
-                                                                    </SelectContent>
-                                                                </Select>
-                                                            )}
-                                                        />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name="availableStudyDays"
+                                                    render={() => (
+                                                        <FormItem>
+                                                            <div className="mb-4">
+                                                                <FormLabel className="font-semibold text-lg text-left w-full block">3. Your study days?</FormLabel>
+                                                            </div>
+                                                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                                                            {DAYS_OF_WEEK.map((day) => (
+                                                                <FormField
+                                                                    key={day}
+                                                                    control={form.control}
+                                                                    name="availableStudyDays"
+                                                                    render={({ field }) => {
+                                                                        return (
+                                                                        <FormItem key={day} className="flex flex-row items-start space-x-2 space-y-0">
+                                                                            <FormControl>
+                                                                                <Checkbox
+                                                                                    checked={field.value?.includes(day)}
+                                                                                    onCheckedChange={(checked) => {
+                                                                                        return checked
+                                                                                            ? field.onChange([...field.value, day])
+                                                                                            : field.onChange( field.value?.filter( (value) => value !== day ) )
+                                                                                    }}
+                                                                                />
+                                                                            </FormControl>
+                                                                            <FormLabel className="font-normal">{day.substring(0,3)}</FormLabel>
+                                                                        </FormItem>
+                                                                        )
+                                                                    }}
+                                                                />
+                                                            ))}
+                                                            </div>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+                                            {/* Right Column: Topics */}
+                                            <div>
+                                                <FormLabel className="font-semibold text-lg text-left w-full mb-2 block">4. What topics do you want to study?</FormLabel>
+                                                <Card className="bg-muted/50 p-4 space-y-4">
+                                                    {fields.map((field, index) => (
+                                                        <div key={field.id} className="flex items-center gap-2 bg-background p-2 rounded-md">
+                                                            <Controller
+                                                                name={`topics.${index}.topic`}
+                                                                control={form.control}
+                                                                render={({ field: controllerField }) => (
+                                                                    <Popover>
+                                                                        <PopoverTrigger asChild>
+                                                                            <Button variant="outline" className="w-full justify-between font-normal">
+                                                                                {controllerField.value || "Select a Topic"}
+                                                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                                            </Button>
+                                                                        </PopoverTrigger>
+                                                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                                            <Command>
+                                                                                <CommandInput placeholder="Search topic..." />
+                                                                                <CommandEmpty>No topic found.</CommandEmpty>
+                                                                                <CommandList>
+                                                                                    <ScrollArea className="h-72">
+                                                                                    {syllabusTopics.map((group) => (
+                                                                                        <CommandGroup key={group.section} heading={group.section}>
+                                                                                            {group.topics.map((topic) => (
+                                                                                                <CommandItem
+                                                                                                    key={topic}
+                                                                                                    onSelect={() => {
+                                                                                                        form.setValue(`topics.${index}.topic`, topic);
+                                                                                                        const popoverTrigger = document.querySelector(`[aria-controls^="radix-popover-content-"][data-state="open"]`);
+                                                                                                        popoverTrigger?.dispatchEvent(new Event('click', { bubbles: true }))
+                                                                                                    }}
+                                                                                                    >
+                                                                                                    <Check className={cn("mr-2 h-4 w-4", topic === controllerField.value ? "opacity-100" : "opacity-0")} />
+                                                                                                    {topic}
+                                                                                                </CommandItem>
+                                                                                            ))}
+                                                                                        </CommandGroup>
+                                                                                    ))}
+                                                                                    </ScrollArea>
+                                                                                </CommandList>
+                                                                            </Command>
+                                                                        </PopoverContent>
+                                                                    </Popover>
+                                                                )}
+                                                            />
+                                                            
+                                                            <Controller
+                                                                name={`topics.${index}.difficulty`}
+                                                                control={form.control}
+                                                                defaultValue="Easy"
+                                                                render={({ field: controllerField }) => (
+                                                                    <Select onValueChange={controllerField.onChange} defaultValue={controllerField.value}>
+                                                                        <SelectTrigger className="w-[120px]">
+                                                                            <SelectValue placeholder="Difficulty" />
+                                                                        </SelectTrigger>
+                                                                        <SelectContent>
+                                                                            <SelectItem value="Easy">Easy</SelectItem>
+                                                                            <SelectItem value="Hard">Hard</SelectItem>
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                )}
+                                                            />
 
-                                                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
-                                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                                        </Button>
-                                                    </div>
-                                                ))}
-                                                <Button type="button" variant="outline" className="w-full" onClick={() => append({ topic: '', difficulty: 'Easy' })}>
-                                                    <PlusCircle className="mr-2 h-4 w-4"/> Add Topic
-                                                </Button>
-                                            </Card>
-                                             <FormMessage>{form.formState.errors.topics?.message || form.formState.errors.topics?.root?.message}</FormMessage>
+                                                            <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                                            </Button>
+                                                        </div>
+                                                    ))}
+                                                    <Button type="button" variant="outline" className="w-full" onClick={() => append({ topic: '', difficulty: 'Easy' })}>
+                                                        <PlusCircle className="mr-2 h-4 w-4"/> Add Topic
+                                                    </Button>
+                                                </Card>
+                                                <FormMessage>{form.formState.errors.topics?.message || form.formState.errors.topics?.root?.message}</FormMessage>
+                                            </div>
                                         </div>
                                         </>
                                     )}

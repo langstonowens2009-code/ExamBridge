@@ -5,6 +5,7 @@ import { z } from 'genkit';
 import { WeeklyStudyPathModuleSchema } from '@/ai/schemas/study-path';
 import syllabusData from '@/lib/syllabusData.json';
 import { db } from '@/lib/firebaseAdmin'; // Use the server-side admin SDK
+import { AP_CLASSES } from '@/lib/constants';
 
 const formInputSchema = z.object({
   examType: z.string(),
@@ -51,17 +52,23 @@ export async function analyzeSyllabusAndMatchResources(
 
     // Step 1: Prioritize local syllabus data
     const selectedSyllabus = localSyllabusData[examType];
+    const isApClass = AP_CLASSES.includes(examType);
 
     if (selectedSyllabus) {
         console.log(`Found '${examType}' in local syllabus data. Using it as the primary blueprint.`);
         syllabusContent = JSON.stringify(selectedSyllabus, null, 2);
         planSourceNote = `This plan is structured based on the standard curriculum for the ${selectedSyllabus.name}.`;
-    } else {
-        // This block will now primarily handle AP classes or other types not in the main JSON
-        console.log(`'${examType}' not found in local data. Using it as a topic keyword.`);
-        planSourceNote = `This plan is structured based on a custom search for the '${examType}' exam.`;
+    } else if (isApClass) {
+        console.log(`Using AP Class '${examType}' as the topic keyword.`);
+        planSourceNote = `This plan is structured for the '${examType}' exam.`;
         syllabusContent = `The user wants to create a study plan for the exam: '${examType}'. Please structure a 4-week study plan for this exam.`;
+    } else {
+        // Fallback for custom entries not in our main categories
+        console.log(`'${examType}' not found in local data. Treating as a custom topic.`);
+        planSourceNote = `This plan is structured based on a custom search for the topic: '${examType}'.`;
+        syllabusContent = `The user wants to create a study plan for the topic: '${examType}'. Please structure a 4-week study plan.`;
     }
+
 
     // Step 2: Fetch relevant resources from Firestore using the Admin SDK
     console.log(`Querying Firestore for resources with category matching: ${examType}`);
@@ -93,7 +100,7 @@ export async function analyzeSyllabusAndMatchResources(
       const timeDiff = testDate.getTime() - today.getTime();
       const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
       const weeksLeft = Math.floor(daysLeft / 7);
-      timelinePrompt = `The user's test is on ${testDate.toLocaleDateString()}. They have ${daysLeft} days (${weeksLeft} full weeks) to prepare. Create a weekly study plan that fits this timeline.`;
+      timelinePrompt = `The user's test is on ${testDate.toLocaleDateString()}. They have ${daysLeft} days (~${weeksLeft} full weeks) to prepare. Create a weekly study plan that fits this timeline.`;
     }
 
     // Step 3: The "Study Plan Architect" - Synthesize and build the plan.

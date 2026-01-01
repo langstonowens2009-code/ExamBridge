@@ -46,6 +46,9 @@ export async function generateStudyPathAction(data: z.infer<typeof formSchema>):
     if (!studyPath || studyPath.length === 0 || (studyPath[0]?.modules[0]?.topic === 'Search Timed Out')) {
         return { success: false, error: "The AI search timed out. This can happen during peak hours. Please try generating the plan again." };
     }
+    if (studyPath[0]?.modules[0]?.topic === 'Error Generating Plan') {
+        return { success: false, error: "An unexpected error occurred while creating your study plan. Please try again." };
+    }
 
     // The action now only returns the generated data. Saving is handled by the client.
     return { success: true, data: studyPath };

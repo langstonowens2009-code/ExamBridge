@@ -110,6 +110,7 @@ export async function generateAndSaveStudyPlan(input: ActionInput): Promise<Acti
     // 4. HYBRID AI: Generate tasks for each scheduled topic
     const planDayTasks: any[] = [];
     for (const schedule of topicSchedule) {
+      if (schedule.dates.length === 0) continue;
       const aiResponse = await generateStudyTasksForTopic({
         topic: schedule.topic,
         examType: testName,
@@ -132,9 +133,18 @@ export async function generateAndSaveStudyPlan(input: ActionInput): Promise<Acti
     
     // 6. PERSISTENCE: Save the entire plan in a batch write
     const batch = db.batch();
+
+    // CRITICAL FIX: Create the parent test document first.
+    const testRef = db.collection('users').doc(userId).collection('tests').doc(testId);
+    batch.set(testRef, {
+        testName: testName,
+        testDate: testDate,
+        createdAt: new Date(), // Add a creation date
+    });
+
     planDayTasks.forEach(planDay => {
         // Create a new doc for each day in the subcollection
-        const planDayRef = db.collection('users').doc(userId).collection('tests').doc(testId).collection('planDays').doc();
+        const planDayRef = testRef.collection('planDays').doc();
         batch.set(planDayRef, planDay);
     });
     
@@ -147,3 +157,4 @@ export async function generateAndSaveStudyPlan(input: ActionInput): Promise<Acti
     return { success: false, error: 'An unexpected server error occurred. Could not generate study plan.' };
   }
 }
+

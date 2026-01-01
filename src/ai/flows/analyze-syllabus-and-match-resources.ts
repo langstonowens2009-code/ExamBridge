@@ -50,7 +50,7 @@ export async function analyzeSyllabusAndMatchResources(
     let syllabusContent: string;
     let planSourceNote = '';
 
-    // Step 1: Prioritize local syllabus data
+    // Step 1: Prioritize local syllabus data or create a simple topic prompt.
     const selectedSyllabus = localSyllabusData[examType];
     const isApClass = AP_CLASSES.includes(examType);
 
@@ -58,15 +58,14 @@ export async function analyzeSyllabusAndMatchResources(
         console.log(`Found '${examType}' in local syllabus data. Using it as the primary blueprint.`);
         syllabusContent = JSON.stringify(selectedSyllabus, null, 2);
         planSourceNote = `This plan is structured based on the standard curriculum for the ${selectedSyllabus.name}.`;
-    } else if (isApClass) {
-        console.log(`Using AP Class '${examType}' as the topic keyword.`);
-        planSourceNote = `This plan is structured for the '${examType}' exam.`;
-        syllabusContent = `The user wants to create a study plan for the exam: '${examType}'. Please structure a 4-week study plan for this exam.`;
+    } else if (syllabusText) {
+        console.log(`Using user-provided syllabus text for '${examType}'.`);
+        syllabusContent = syllabusText;
+        planSourceNote = `This plan is structured based on the syllabus you provided for '${examType}'.`;
     } else {
-        // Fallback for custom entries not in our main categories
-        console.log(`'${examType}' not found in local data. Treating as a custom topic.`);
-        planSourceNote = `This plan is structured based on a custom search for the topic: '${examType}'.`;
-        syllabusContent = `The user wants to create a study plan for the topic: '${examType}'. Please structure a 4-week study plan.`;
+        console.log(`'${examType}' not found in local data and no custom syllabus provided. Treating as a keyword.`);
+        planSourceNote = `This plan is structured for the topic: '${examType}'.`;
+        syllabusContent = `The user wants to create a study plan for the exam or topic: '${examType}'. Please structure a 4-week study plan.`;
     }
 
 
@@ -88,8 +87,8 @@ export async function analyzeSyllabusAndMatchResources(
     } else {
         console.log(`No resources found in Firestore for category: ${examType}. The AI will have to find its own resources on the web.`);
         resourcesContext = `
-            No pre-vetted resources were found in our database for this topic. You will need to find appropriate free resources on the web to build the study plan.
-            For each module you create, find and provide a direct link to a high-quality, free resource. This is a critical fallback step.
+            No pre-vetted resources were found in our database for this topic. You must find appropriate free resources on the web to build the study plan.
+            For each module you create, find and provide a direct link to a high-quality, free resource. This is a critical requirement.
         `;
     }
 
@@ -107,7 +106,7 @@ export async function analyzeSyllabusAndMatchResources(
     const architectResult = await ai.generate({
       model: 'gemini-1.5-pro-latest',
       prompt: `
-        You are a Strategic Personal Tutor. Your task is to create a personalized, weekly study plan using the provided resources.
+        You are a Strategic Personal Tutor. Your task is to create a personalized, weekly study plan using the provided resources. Do not search the web or use any external tools.
 
         Your Process:
         1.  **Analyze the Curriculum:** Review the provided syllabus structure. This is your primary blueprint.
@@ -124,7 +123,7 @@ export async function analyzeSyllabusAndMatchResources(
         - Prepend the following note to the 'description' of the very FIRST module in your plan: "${planSourceNote}"
         - Only output the final JSON array. Do not include any other text or markdown.
 
-        HERE IS THE CURRICULUM:
+        HERE IS THE CURRICULUM BLUEPRINT:
         ${syllabusContent}
 
         HERE ARE THE ONLY RESOURCES YOU ARE ALLOWED TO USE:
@@ -159,7 +158,7 @@ export async function analyzeSyllabusAndMatchResources(
     if (error instanceof Error && (error.message.includes('DEADLINE_EXCEEDED') || error.message.includes('timeout'))) {
         return fallbackResult;
     }
-    // For other errors, return a generic error structure if possible, or re-throw
+    // For other errors, return a generic error structure if possible
     return [{
         week: 'Week 1',
         modules: [{

@@ -63,7 +63,6 @@ export async function analyzeSyllabusAndMatchResources(
         syllabusContent = syllabusText;
         planSourceNote = `This plan is structured based on the syllabus you provided for '${examType}'.`;
     } else {
-        console.log(`'${examType}' not found in local data and no custom syllabus provided. Treating as a keyword.`);
         planSourceNote = `This plan is structured for the topic: '${examType}'.`;
         syllabusContent = `The user wants to create a study plan for the exam or topic: '${examType}'. Please structure a 4-week study plan.`;
     }

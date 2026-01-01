@@ -99,7 +99,6 @@ export async function analyzeSyllabusAndMatchResources(
     // Step 3: The "Study Plan Architect" - Synthesize and build the plan.
     const architectResult = await ai.generate({
       model: 'gemini-1.5-pro-latest',
-      // REMOVED `tools` property to prevent web search
       prompt: `
         You are a Strategic Personal Tutor. Your task is to create a personalized, weekly study plan using the provided resources.
 

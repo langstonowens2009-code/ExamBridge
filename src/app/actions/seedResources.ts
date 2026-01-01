@@ -13,6 +13,7 @@ type ActionResult = {
 
 export async function seedResourcesAction(): Promise<ActionResult> {
   try {
+    console.log('Seeding started...');
     const db = getFirestore(app);
     const resources = resourcesData.resources;
 
@@ -31,6 +32,7 @@ export async function seedResourcesAction(): Promise<ActionResult> {
     
     await batch.commit();
 
+    console.log(`Successfully seeded ${resources.length} resources.`);
     return { success: true, count: resources.length };
   } catch (error: any) {
     console.error("Error seeding resources:", error);

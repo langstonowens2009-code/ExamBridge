@@ -1,47 +1,75 @@
 'use server';
 
-import { db } from '@/lib/firebaseAdmin';
+import { generateStudyPlan } from '@/ai/flows/generate-study-plan-flow';
+import { format } from 'date-fns';
+import { addDoc, collection } from 'firebase/firestore';
+import { firestore } from '@/firebase/config'; // Assuming you have a Firestore instance exported
 
-// This action is now only used for fetching study plans.
-// The generation logic has been moved to 'src/app/actions/generate-plan.ts'
+type TopicInput = {
+  topic: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+};
+
+type ActionInput = {
+  userId: string;
+  examType: string;
+  testDate: Date;
+  minutesPerDay: number;
+  availableStudyDays: string[];
+  topics: TopicInput[];
+};
 
 type ActionResult = {
   success: boolean;
   data?: any;
   error?: string;
-}
+  planId?: string;
+};
 
+/**
+ * Generates and saves a study plan to Firestore.
+ */
+export async function generateAndSaveStudyPlanAction(input: ActionInput): Promise<ActionResult> {
+  const { userId, ...planRequest } = input;
 
-// This action retrieves the list of study plans for the user's dashboard.
-// It is intended to be called from a client component that has access to the user's auth state.
-export async function getStudyPlansAction(userId: string): Promise<ActionResult> {
   if (!userId) {
-    return { success: false, error: 'Authentication failed.' };
+    return { success: false, error: 'User not authenticated.' };
   }
 
   try {
-    // We query the 'tests' subcollection which now holds the study plans.
-    const testsSnapshot = await db.collection('users').doc(userId).collection('tests').get();
-    
-    const plans = testsSnapshot.docs.map(doc => {
-      const data = doc.data();
-      return { 
-        id: doc.id, 
-        ...data,
-        // The new structure doesn't have a top-level 'createdAt' field in the 'test' document.
-        // We'll use the testName and other data available.
-        // If a creation date is needed, it should be added when the 'test' document is created.
-        examType: data.testName || 'Untitled Plan', // Fallback for examType
-      };
+    // 1. Call the AI flow to generate the study plan
+    const aiResponse = await generateStudyPlan({
+      ...planRequest,
+      testDate: format(planRequest.testDate, 'yyyy-MM-dd'),
     });
 
-    return { success: true, data: plans };
-  } catch (error: any) {
-    console.error("Error fetching study plans:", error.stack || error);
-    // Provide a more specific error if it's a permission issue
-    if (error.code === 'permission-denied') {
-        return { success: false, error: 'You do not have permission to access these study plans.' };
+    if (!aiResponse || !aiResponse.studyPlan) {
+      throw new Error('AI failed to generate a study plan.');
     }
-    return { success: false, error: 'Failed to fetch study plans due to a server error.' };
+
+    // 2. Structure the data for Firestore
+    const newPlan = {
+      userId: userId,
+      request: planRequest,
+      response: aiResponse.studyPlan, // The structured JSON from the AI
+      createdAt: new Date(),
+    };
+
+    // 3. Save the new study plan to Firestore
+    const planRef = await addDoc(collection(firestore, 'users', userId, 'studyPlans'), newPlan);
+
+    return { success: true, planId: planRef.id, data: aiResponse.studyPlan };
+  } catch (error: any) {
+    console.error('Error in generateAndSaveStudyPlanAction:', error);
+    return { success: false, error: error.message || 'Failed to generate study plan.' };
   }
+}
+
+/**
+ * Retrieves the list of study plans for the user's dashboard.
+ */
+export async function getStudyPlansAction(userId: string): Promise<ActionResult> {
+  // This function will be implemented later to fetch data for the dashboard.
+  // For now, it's a placeholder.
+  return { success: true, data: [] };
 }

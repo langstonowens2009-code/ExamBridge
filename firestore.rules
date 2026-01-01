@@ -1,97 +1,17 @@
-/**
- * This ruleset enforces a strict user-ownership model for a study plan generator application.
- *
- * Core Philosophy:
- * All user-generated data is private and can only be accessed by the user who created it. The rules
- * ensure that authenticated users can create, read, update, and delete their own profile information
- * and their own study plans, but cannot access the data of any other user. There are no public
- * collections or shared data models.
- *
- * Data Structure:
- * The data is organized hierarchically under a top-level `users` collection. Each user's data,
- * including their generated `studyPaths`, is stored in a document tree specific to them:
- * - /users/{userId} -> User profile document
- * - /users/{userId}/studyPaths/{studyPathId} -> Individual study plans
- *
- * Key Security Decisions:
- * - User Isolation: A user's access is strictly confined to their own document tree (`/users/{userId}/...`).
- * - No User Enumeration: Listing documents in the top-level `/users` collection is explicitly disallowed
- *   to protect user privacy and prevent data scraping.
- * - Default Deny: Any path not explicitly matched by these rules is inaccessible.
- *
- * Denormalization for Authorization:
- * To ensure fast and secure authorization, the `StudyPath` documents contain a denormalized `userId` field.
- * This allows rules to validate ownership directly from the document's data without needing costly `get()`
- * calls to parent documents, simplifying the logic and enhancing performance.
- *
- * Structural Segregation:
- * User-specific data (`studyPaths`) is stored in a subcollection under the corresponding user's
- * document. This physical separation ensures that queries for one user's data can never accidentally
- * access or leak data from another user, providing a strong security boundary.
- */
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper functions to improve readability and reuse of logic.
-
-    /**
-     * Checks if the user is authenticated.
-     */
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /**
-     * Checks if the currently authenticated user's UID matches the given userId.
-     * This is the primary function for enforcing document ownership.
-     */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    /**
-     * @description
-     *   Rules for the User document, which stores basic profile information.
-     *   A user can create their own profile, and read, update, or delete it.
-     *   Listing all users is explicitly forbidden to protect privacy.
-     * @path
-     *   /users/{userId}
-     * @allow
-     *   A logged-in user (create) their own profile document: `auth.uid == 'user_abc'`, `create /users/user_abc`
-     * @deny
-     *   An anonymous user (list) all user profiles: `auth.uid == null`, `list /users`
-     * @principle
-     *   Enforces self-creation and ownership. Prevents user enumeration.
-     */
+    
+    // Users can only manage their own profile.
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isOwner(userId) && resource != null && request.resource.data.id == resource.data.id;
-      allow delete: if isOwner(userId) && resource != null;
+      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null;
     }
 
-    /**
-     * @description
-     *   Rules for a user's private collection of generated study paths.
-     *   Access is strictly limited to the owner of the data. The `userId` field
-     *   within the document must match the user ID in the path.
-     * @path
-     *   /users/{userId}/studyPaths/{studyPathId}
-     * @allow
-     *   A logged-in user (create) a new study path in their own subcollection: `auth.uid == 'user_abc'`, `create /users/user_abc/studyPaths/path_123`
-     * @deny
-     *   A different user (get) another user's study path: `auth.uid == 'user_xyz'`, `get /users/user_abc/studyPaths/path_123`
-     * @principle
-     *   Restricts access to a user's own data tree and validates relational integrity.
-     */
-    match /users/{userId}/studyPaths/{studyPathId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isOwner(userId) && resource != null && request.resource.data.userId == resource.data.userId;
-      allow delete: if isOwner(userId) && resource != null;
+    // Users can only create, read, update, or delete their own study plans.
+    match /users/{userId}/studyPlans/{planId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }

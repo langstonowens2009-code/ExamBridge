@@ -5,7 +5,7 @@ import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format } from "date-fns";
-import { Loader2, Check, ChevronsUpDown, Calendar as CalendarIcon, X, PlusCircle, Trash2 } from 'lucide-react';
+import { Loader2, Check, ChevronsUpDown, Calendar as CalendarIcon, X, PlusCircle, Trash2, BookOpen } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Calendar } from "@/components/ui/calendar";
@@ -23,17 +23,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { EXAM_CATEGORIES, AP_CLASSES } from '@/lib/constants';
 import syllabusData from '@/lib/syllabusData.json';
-import { generateAndSaveStudyPlan } from '@/app/actions/generate-plan';
+import { generateAndSaveStudyPlanAction } from '@/app/actions';
 import { useAuth } from '@/hooks/useAuth';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
-import { useRouter } from 'next/navigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from './ui/checkbox';
-import { v4 as uuidv4 } from 'uuid';
 import { ScrollArea } from './ui/scroll-area';
+import { StudyPathDashboard } from './study-path-dashboard';
+import type { WeeklyStudyPath } from '@/ai/schemas/study-path';
 
 // Zod schema for a single topic
 const topicSchema = z.object({
@@ -76,10 +76,10 @@ interface MainPageProps {
 
 export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPageProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [generatedPlan, setGeneratedPlan] = useState<WeeklyStudyPath[] | null>(null);
   const [showApClasses, setShowApClasses] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
-  const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -121,51 +121,62 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
     }
     
     setIsLoading(true);
+    setGeneratedPlan(null);
 
-    const result = await generateAndSaveStudyPlan({
+    const result = await generateAndSaveStudyPlanAction({
         userId: user.uid,
-        testId: uuidv4(), // Generate a unique ID for the test plan
-        testName: values.examType,
-        testDate: values.testDate,
-        availableStudyDays: values.availableStudyDays,
-        topics: values.topics,
+        ...values,
     });
 
     setIsLoading(false);
 
-    if (result.success && result.planId) {
+    if (result.success && result.data) {
       toast({
         title: "Plan Generated!",
-        description: "Your new study plan is ready. Redirecting you to the dashboard...",
+        description: "Your personalized study plan is ready below.",
       });
-      router.push('/dashboard');
+      setGeneratedPlan(result.data);
+      onAccordionValueChange(''); // Collapse the form
     } else {
       toast({
         variant: 'destructive',
         title: 'An error occurred',
-        description: result.error || 'Failed to generate study path. Please try again.',
+        description: result.error || 'Failed to generate study plan. Please try again.',
       });
     }
   }
 
-  const handleExamTypeChange = (value: string, closePopover: () => void) => {
+  const handleExamTypeChange = (value: string) => {
+    form.setValue('examType', value);
     if (value === 'AP Classes') {
-        setShowApClasses(true);
+      setShowApClasses(true);
     } else {
-        form.setValue('examType', value);
-        setShowApClasses(false);
-        closePopover();
+      setShowApClasses(false);
     }
-  }
+  };
   
-  const handleApClassSelect = (value: string, closePopover: () => void) => {
+  const handleApClassSelect = (value: string) => {
     form.setValue('examType', value);
     setShowApClasses(false);
-    closePopover();
-  }
+  };
+
+  const handleReset = () => {
+    setGeneratedPlan(null);
+    form.reset({
+      examType: '',
+      minutesPerDay: 60,
+      availableStudyDays: [],
+      topics: [],
+    });
+    onAccordionValueChange('item-1');
+  };
 
   const isButtonDisabled = isLoading || !form.formState.isValid;
   const examOptions = showApClasses ? AP_CLASSES : EXAM_CATEGORIES;
+
+  if (generatedPlan) {
+    return <StudyPathDashboard studyPath={generatedPlan} onReset={handleReset} />;
+  }
 
   return (
     <div className="w-full max-w-5xl flex flex-col items-center text-center animate-in fade-in-50 duration-500">
@@ -181,7 +192,7 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
                      {isLoading ? (
                         <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Generating Your Adaptive Plan...</>
                     ) : (
-                        <>Create My Study Plan</>
+                        <><BookOpen className="mr-2 h-5 w-5" />Create My Study Plan</>
                     )}
                 </AccordionTrigger>
                 <AccordionContent>
@@ -206,34 +217,50 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
                                                                 <PopoverTrigger asChild>
                                                                     <FormControl>
                                                                         <Button variant="outline" role="combobox" className={cn("w-full justify-between h-12 text-base bg-[#F9FAFB]", !field.value && "text-muted-foreground")}>
-                                                                            {field.value ? (showApClasses ? "Select AP Class" : field.value) : (showApClasses ? "Select AP Class" : "Select Exam Type")}
+                                                                            {field.value || "Select Exam Type"}
                                                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                                         </Button>
                                                                     </FormControl>
                                                                 </PopoverTrigger>
                                                                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                                                     <Command>
-                                                                        <CommandInput placeholder={showApClasses ? "Search AP Class..." : "Search Exam..."} />
-                                                                        <CommandEmpty>No results found.</CommandEmpty>
+                                                                        <CommandInput placeholder="Search exam..."/>
+                                                                        <CommandEmpty>No exam found.</CommandEmpty>
                                                                         <CommandList>
-                                                                            <ScrollArea className="h-72">
-                                                                                <CommandGroup>
-                                                                                    {examOptions.map((exam) => (
-                                                                                        <CommandItem value={exam} key={exam}
-                                                                                            onSelect={(currentValue) => {
-                                                                                                const popoverTrigger = document.querySelector('[aria-controls^="radix-popover-content-"][data-state="open"]');
-                                                                                                if (showApClasses) {
-                                                                                                    handleApClassSelect(currentValue, () => popoverTrigger?.dispatchEvent(new Event('click', { bubbles: true })))
-                                                                                                } else {
-                                                                                                    handleExamTypeChange(currentValue, () => popoverTrigger?.dispatchEvent(new Event('click', { bubbles: true })))
-                                                                                                }
-                                                                                            }}>
-                                                                                            <Check className={cn("mr-2 h-4 w-4", exam === field.value ? "opacity-100" : "opacity-0")} />
-                                                                                            {exam}
-                                                                                        </CommandItem>
-                                                                                    ))}
-                                                                                </CommandGroup>
-                                                                            </ScrollArea>
+                                                                          <CommandGroup>
+                                                                            {EXAM_CATEGORIES.map((exam) => (
+                                                                              <CommandItem
+                                                                                value={exam}
+                                                                                key={exam}
+                                                                                onSelect={() => {
+                                                                                  handleExamTypeChange(exam);
+                                                                                  const popoverTrigger = document.querySelector('[aria-controls^="radix-popover-content-"][data-state="open"]');
+                                                                                  popoverTrigger?.dispatchEvent(new Event('click', { bubbles: true }))
+                                                                                }}
+                                                                              >
+                                                                                <Check className={cn("mr-2 h-4 w-4", exam === field.value ? "opacity-100" : "opacity-0")}/>
+                                                                                {exam}
+                                                                              </CommandItem>
+                                                                            ))}
+                                                                          </CommandGroup>
+                                                                          {showApClasses && (
+                                                                            <CommandGroup heading="AP Classes">
+                                                                              {AP_CLASSES.map((apClass) => (
+                                                                                <CommandItem
+                                                                                  value={apClass}
+                                                                                  key={apClass}
+                                                                                  onSelect={() => {
+                                                                                    handleApClassSelect(apClass);
+                                                                                    const popoverTrigger = document.querySelector('[aria-controls^="radix-popover-content-"][data-state="open"]');
+                                                                                    popoverTrigger?.dispatchEvent(new Event('click', { bubbles: true }))
+                                                                                  }}
+                                                                                >
+                                                                                  <Check className={cn("mr-2 h-4 w-4", apClass === field.value ? "opacity-100" : "opacity-0")}/>
+                                                                                  {apClass}
+                                                                                </CommandItem>
+                                                                              ))}
+                                                                            </CommandGroup>
+                                                                          )}
                                                                         </CommandList>
                                                                     </Command>
                                                                 </PopoverContent>

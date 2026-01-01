@@ -6,7 +6,7 @@ import { WeeklyStudyPathModuleSchema } from '@/ai/schemas/study-path';
 import syllabusData from '@/lib/syllabusData.json';
 import { db } from '@/lib/firebaseAdmin'; // Use the server-side admin SDK
 import { AP_CLASSES } from '@/lib/constants';
-import { googleSearch, browse } from 'genkit/tools';
+import { googleSearch, browse } from '@genkit-ai/google-genai';
 
 const formInputSchema = z.object({
   examType: z.string(),

@@ -38,7 +38,7 @@ import { ScrollArea } from './ui/scroll-area';
 // Zod schema for a single topic
 const topicSchema = z.object({
   topic: z.string().min(1, 'Topic name is required.'),
-  difficulty: z.enum(['Easy', 'Hard']),
+  difficulty: z.enum(['Easy', 'Medium', 'Hard']),
 });
 
 // Main form schema
@@ -404,6 +404,7 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
                                                                     </SelectTrigger>
                                                                     <SelectContent>
                                                                         <SelectItem value="Easy">Easy</SelectItem>
+                                                                        <SelectItem value="Medium">Medium</SelectItem>
                                                                         <SelectItem value="Hard">Hard</SelectItem>
                                                                     </SelectContent>
                                                                 </Select>

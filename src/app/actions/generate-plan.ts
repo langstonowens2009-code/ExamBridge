@@ -8,7 +8,7 @@ import { addDays, differenceInDays, format } from 'date-fns';
 // Define the shape of the input from the client
 type TopicInput = {
   topic: string;
-  difficulty: 'Easy' | 'Hard';
+  difficulty: 'Easy' | 'Medium' | 'Hard';
 };
 
 type ActionInput = {
@@ -65,8 +65,9 @@ export async function generateAndSaveStudyPlan(input: ActionInput): Promise<Acti
 
     // 2. DETERMINISTIC LOGIC: Weighted Distribution
     const easyTopics = topics.filter(t => t.difficulty === 'Easy');
+    const mediumTopics = topics.filter(t => t.difficulty === 'Medium');
     const hardTopics = topics.filter(t => t.difficulty === 'Hard');
-    const totalWeight = easyTopics.length * 1 + hardTopics.length * 2;
+    const totalWeight = easyTopics.length * 1 + mediumTopics.length * 1.5 + hardTopics.length * 2;
 
     const daysPerWeight = studyDates.length / totalWeight;
 
@@ -87,6 +88,7 @@ export async function generateAndSaveStudyPlan(input: ActionInput): Promise<Acti
     
     // Assign hard topics first to ensure they get priority
     assignDates(hardTopics, 2);
+    assignDates(mediumTopics, 1.5);
     assignDates(easyTopics, 1);
 
     // If rounding left any remaining days, add them to the last topic

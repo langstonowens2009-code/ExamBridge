@@ -6,6 +6,7 @@ import { WeeklyStudyPathModuleSchema } from '@/ai/schemas/study-path';
 import syllabusData from '@/lib/syllabusData.json';
 import { db } from '@/lib/firebaseAdmin'; // Use the server-side admin SDK
 import { AP_CLASSES } from '@/lib/constants';
+import { googleSearch, browse } from 'genkit/tools';
 
 const formInputSchema = z.object({
   examType: z.string(),
@@ -38,8 +39,9 @@ type SyllabusData = {
 const localSyllabusData = syllabusData as SyllabusData;
 
 /**
- * Acts as a Strategic Personal Tutor. It analyzes a syllabus (from a local JSON file first),
- * considers user goals, and builds a supplementary study plan using resources from a Firestore database.
+ * Acts as a Strategic Personal Tutor. It analyzes a syllabus,
+ * checks a Firestore database for resources first, and if none are found,
+ * falls back to searching the web to build a supplementary study plan.
  */
 export async function analyzeSyllabusAndMatchResources(
   input: z.infer<typeof formInputSchema>
@@ -68,26 +70,38 @@ export async function analyzeSyllabusAndMatchResources(
     }
 
 
-    // Step 2: Fetch relevant resources from Firestore using the Admin SDK
+    // Step 2 (Hybrid): Check Firestore for resources first.
     console.log(`Querying Firestore for resources with category matching: ${examType}`);
     const resourcesSnapshot = await db.collection('resources').where('category', '==', examType).get();
     const availableResources = resourcesSnapshot.docs.map(doc => doc.data());
     
     let resourcesContext: string;
+    let toolsToUse: any[] = [];
+    let promptInstructions: string;
+
     if (availableResources.length > 0) {
-        console.log(`Found ${availableResources.length} resources in Firestore.`);
+        console.log(`Found ${availableResources.length} resources in Firestore. Using database-first approach.`);
         resourcesContext = `
-            Here is a list of available, high-quality, free study resources from our database.
-            You MUST use these resources to build the study plan. For each module you create, you MUST provide a direct link to one of these resources.
-            
-            Available Resources:
+            HERE ARE THE ONLY RESOURCES YOU ARE ALLOWED TO USE:
             ${JSON.stringify(availableResources, null, 2)}
         `;
+        promptInstructions = `
+        Your Process:
+        1.  **Analyze the Curriculum:** Review the provided syllabus structure. This is your primary blueprint.
+        2.  **Use Provided Resources:** Build the study plan using ONLY the list of available resources provided below. This is a strict requirement. Do not search the web or use any external tools.
+        3.  **Adhere to User Instructions:** Carefully follow the user's custom instructions.
+        4.  **Synthesize the Plan:** Construct the weekly study plan. Each module in your plan must have a clear topic, a direct link to a resource, and a description explaining WHY this resource is a good fit.
+        `;
     } else {
-        console.log(`No resources found in Firestore for category: ${examType}. The AI will have to find its own resources on the web.`);
-        resourcesContext = `
-            No pre-vetted resources were found in our database for this topic. You must find appropriate free resources on the web to build the study plan.
-            For each module you create, find and provide a direct link to a high-quality, free resource. This is a critical requirement.
+        console.log(`No resources found for '${examType}'. Falling back to web search.`);
+        resourcesContext = `No pre-vetted resources were found in our database for this topic.`;
+        toolsToUse = [googleSearch, browse];
+        promptInstructions = `
+        Your Process:
+        1.  **Analyze the Curriculum:** Review the provided syllabus structure.
+        2.  **Find Resources Online:** You must find appropriate free resources on the web to build the study plan. Use your search tools for this.
+        3.  **Adhere to User Instructions:** Carefully follow the user's custom instructions.
+        4.  **Synthesize the Plan:** Construct the weekly study plan. For each module you create, you must provide a direct link to a high-quality, free resource. This is a critical requirement.
         `;
     }
 
@@ -104,14 +118,11 @@ export async function analyzeSyllabusAndMatchResources(
     // Step 3: The "Study Plan Architect" - Synthesize and build the plan.
     const architectResult = await ai.generate({
       model: 'gemini-1.5-pro-latest',
+      tools: toolsToUse,
       prompt: `
-        You are a Strategic Personal Tutor. Your task is to create a personalized, weekly study plan using the provided resources. Do not search the web or use any external tools.
-
-        Your Process:
-        1.  **Analyze the Curriculum:** Review the provided syllabus structure. This is your primary blueprint.
-        2.  **Use Provided Resources:** Build the study plan using ONLY the list of available resources provided below. This is a strict requirement. If the resource list is empty, you must find resources on the web.
-        3.  **Adhere to User Instructions:** Carefully follow the user's custom instructions.
-        4.  **Synthesize the Plan:** Construct the weekly study plan. Each module in your plan must have a clear topic, a direct link to a resource, and a description explaining WHY this resource is a good fit.
+        You are a Strategic Personal Tutor. Your task is to create a personalized, weekly study plan.
+        
+        ${promptInstructions}
         
         ${timelinePrompt}
 
@@ -125,16 +136,14 @@ export async function analyzeSyllabusAndMatchResources(
         HERE IS THE CURRICULUM BLUEPRINT:
         ${syllabusContent}
 
-        HERE ARE THE ONLY RESOURCES YOU ARE ALLOWED TO USE:
         ${resourcesContext}
 
         User's Custom Instructions:
-        ${customInstructions || 'No custom instructions provided. Focus on creating a balanced, comprehensive plan using the given resources.'}
+        ${customInstructions || 'No custom instructions provided. Focus on creating a balanced, comprehensive plan.'}
       `,
       output: {
         schema: studyPathOutputSchema,
       },
-      // Add a timeout to this specific generate call
       config: {
         requestOptions: {
             timeout: 50000 // 50 seconds
@@ -153,11 +162,9 @@ export async function analyzeSyllabusAndMatchResources(
 
   } catch (error) {
     console.error("Error in analyzeSyllabusAndMatchResources flow:", error);
-    // Check if the error is a timeout error
     if (error instanceof Error && (error.message.includes('DEADLINE_EXCEEDED') || error.message.includes('timeout'))) {
         return fallbackResult;
     }
-    // For other errors, return a generic error structure if possible
     return [{
         week: 'Week 1',
         modules: [{

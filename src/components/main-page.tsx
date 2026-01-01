@@ -96,7 +96,8 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
     setIsLoading(true);
     setStudyPath(null);
 
-    const result = await generateStudyPathAction(values);
+    // Pass the form values and the user's ID to the server action
+    const result = await generateStudyPathAction(values, user?.uid);
 
     setIsLoading(false);
 
@@ -177,7 +178,7 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
                     )}
                 </AccordionTrigger>
                 <AccordionContent>
-                    <Card className="w-full mt-4 shadow-sm bg-card border border-primary/20 rounded-lg">
+                    <Card className="w-full mt-4 shadow-sm bg-card border-primary/20 rounded-lg">
                         <CardContent className="p-6">
                             <Form {...form}>
                                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">

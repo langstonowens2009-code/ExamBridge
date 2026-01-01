@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 import { analyzeSyllabusAndMatchResources } from '@/ai/flows/analyze-syllabus-and-match-resources';
+import { auth } from 'firebase-admin';
 
 // NOTE: Removed firebase-admin imports as they are not suitable for client-invoked server actions.
 // All Firestore operations that depend on user auth should be handled on the client
@@ -30,11 +31,12 @@ type ActionResult = {
   error?: string;
 }
 
-// Note: The responsibility of saving the study plan has been moved to the client-side
-// component that calls this action. This server action is now only responsible for
-// generating the study path from the AI. The client will take the output and save it
-// to the appropriate user's collection in Firestore.
-export async function generateStudyPathAction(data: z.infer<typeof formSchema>): Promise<ActionResult> {
+// This action is called from the client to generate a study plan.
+// It now also accepts a userId to pass to the adaptive learning flow.
+export async function generateStudyPathAction(
+  data: z.infer<typeof formSchema>,
+  userId?: string
+): Promise<ActionResult> {
   const validation = formSchema.safeParse(data);
   if (!validation.success) {
     const errorMessage = validation.error.errors.map(e => e.message).join(', ');
@@ -42,7 +44,12 @@ export async function generateStudyPathAction(data: z.infer<typeof formSchema>):
   }
   
   try {
-    const studyPath = await analyzeSyllabusAndMatchResources(validation.data);
+    // Pass the validated data and the userId to the AI flow.
+    const studyPath = await analyzeSyllabusAndMatchResources({
+      ...validation.data,
+      userId: userId,
+    });
+    
     if (!studyPath || studyPath.length === 0 || (studyPath[0]?.modules[0]?.topic === 'Search Timed Out')) {
         return { success: false, error: "The AI search timed out. This can happen during peak hours. Please try generating the plan again." };
     }

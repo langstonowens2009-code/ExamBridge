@@ -8,9 +8,9 @@ import {
   useCallback,
 } from 'react';
 import { onAuthStateChanged, signOut as firebaseSignOut, type User } from 'firebase/auth';
-import { auth } from '@/firebase/auth';
 import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
+import { useAuth as useFirebaseAuth } from '@/firebase';
 
 export interface AuthContextType {
   user: User | null;
@@ -24,8 +24,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const auth = useFirebaseAuth();
 
   useEffect(() => {
+    if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       setLoading(false);
@@ -37,13 +39,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
     return () => unsubscribe();
-  }, []);
+  }, [auth]);
 
   const signOut = useCallback(async () => {
+    if (!auth) return;
     await firebaseSignOut(auth);
     Cookies.remove('firebaseIdToken');
     router.push('/');
-  }, [router]);
+  }, [router, auth]);
 
   return (
     <AuthContext.Provider value={{ user, loading, signOut }}>

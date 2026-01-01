@@ -1,5 +1,2 @@
-'use client';
-import { getFirestore } from 'firebase/firestore';
-import { app } from './config';
-
-export const db = getFirestore(app);
+// This file is no longer needed and can be deleted.
+// The new provider pattern in src/firebase/provider.tsx and src/firebase/index.ts handles firestore instances.

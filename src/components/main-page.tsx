@@ -164,12 +164,6 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
     closePopover();
   }
 
-  const resetExamSelection = () => {
-    form.setValue('examType', '');
-    form.reset({ ...form.getValues(), topics: [] }); // Reset topics when exam type changes
-    setShowApClasses(false);
-  }
-
   const isButtonDisabled = isLoading || !form.formState.isValid;
   const examOptions = showApClasses ? AP_CLASSES : EXAM_CATEGORIES;
 
@@ -348,28 +342,49 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
                                                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                                         </Button>
                                                                     </PopoverTrigger>
-                                                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0" style={{minWidth: '400px'}}>
                                                                         <Command>
                                                                             <CommandInput placeholder="Search topic..." />
                                                                             <CommandEmpty>No topic found.</CommandEmpty>
                                                                             <CommandList>
                                                                                 <ScrollArea className="h-72">
-                                                                                {syllabusTopics.map((group) => (
-                                                                                    <CommandGroup key={group.section} heading={group.section}>
-                                                                                        {group.topics.map((topic) => (
-                                                                                            <CommandItem
-                                                                                                key={topic}
-                                                                                                onSelect={() => {
-                                                                                                    form.setValue(`topics.${index}.topic`, topic);
-                                                                                                    const popoverTrigger = document.querySelector(`[aria-controls^="radix-popover-content-"][data-state="open"]`);
-                                                                                                    popoverTrigger?.dispatchEvent(new Event('click', { bubbles: true }))
-                                                                                                }}>
-                                                                                                <Check className={cn("mr-2 h-4 w-4", topic === controllerField.value ? "opacity-100" : "opacity-0")} />
-                                                                                                {topic}
-                                                                                            </CommandItem>
+                                                                                {selectedExamType === 'SAT' ? (
+                                                                                    <div className="grid grid-cols-2 gap-4">
+                                                                                        {syllabusTopics.map((group) => (
+                                                                                            <CommandGroup key={group.section} heading={group.section}>
+                                                                                                {group.topics.map((topic) => (
+                                                                                                    <CommandItem
+                                                                                                        key={topic}
+                                                                                                        onSelect={() => {
+                                                                                                            form.setValue(`topics.${index}.topic`, topic);
+                                                                                                            const popoverTrigger = document.querySelector(`[aria-controls^="radix-popover-content-"][data-state="open"]`);
+                                                                                                            popoverTrigger?.dispatchEvent(new Event('click', { bubbles: true }))
+                                                                                                        }}>
+                                                                                                        <Check className={cn("mr-2 h-4 w-4", topic === controllerField.value ? "opacity-100" : "opacity-0")} />
+                                                                                                        {topic}
+                                                                                                    </CommandItem>
+                                                                                                ))}
+                                                                                            </CommandGroup>
                                                                                         ))}
-                                                                                    </CommandGroup>
-                                                                                ))}
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    syllabusTopics.map((group) => (
+                                                                                        <CommandGroup key={group.section} heading={group.section}>
+                                                                                            {group.topics.map((topic) => (
+                                                                                                <CommandItem
+                                                                                                    key={topic}
+                                                                                                    onSelect={() => {
+                                                                                                        form.setValue(`topics.${index}.topic`, topic);
+                                                                                                        const popoverTrigger = document.querySelector(`[aria-controls^="radix-popover-content-"][data-state="open"]`);
+                                                                                                        popoverTrigger?.dispatchEvent(new Event('click', { bubbles: true }))
+                                                                                                    }}>
+                                                                                                    <Check className={cn("mr-2 h-4 w-4", topic === controllerField.value ? "opacity-100" : "opacity-0")} />
+                                                                                                    {topic}
+                                                                                                </CommandItem>
+                                                                                            ))}
+                                                                                        </CommandGroup>
+                                                                                    ))
+                                                                                )}
                                                                                 </ScrollArea>
                                                                             </CommandList>
                                                                         </Command>

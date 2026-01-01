@@ -1,9 +1,10 @@
+
 {
     "resources": [
       { "id": "sat_math_khan", "category": "SAT", "topic": "All Math", "type": "Video Course", "url": "https://www.khanacademy.org/test-prep/digital-sat", "description": "Official SAT Math prep." },
       { "id": "act_science_prep", "category": "ACT", "topic": "Science", "type": "Practice", "url": "https://www.crackact.com/act/science/", "description": "Free ACT Science practice." },
-      { "id": "ap_phys_c_mech", "category": "AP Physics C (Mechanics)", "topic": "Mechanics", "type": "Map", "url": "https://www.physicsroadmap.com/", "description": "Physics C Mechanics roadmap." },
-      { "id": "ap_phys_c_em", "category": "AP Physics C (Electricity & Magnetism)", "topic": "E&M", "type": "Videos", "url": "https://www.flippingphysics.com/ap-physics-c-em.html", "description": "Physics C E&M review." },
+      { "id": "ap_phys_c_mech", "category": "AP Physics C: Mechanics", "topic": "Mechanics", "type": "Map", "url": "https://www.physicsroadmap.com/", "description": "Physics C Mechanics roadmap." },
+      { "id": "ap_phys_c_em", "category": "AP Physics C: Electricity & Magnetism", "topic": "E&M", "type": "Videos", "url": "https://www.flippingphysics.com/ap-physics-c-em.html", "description": "Physics C E&M review." },
       { "id": "ap_phys_1", "category": "AP Physics 1", "topic": "Mechanics", "type": "Tutorials", "url": "https://www.physicsclassroom.com/", "description": "Visual physics tutorials." },
       { "id": "ap_calc_bc", "category": "AP Calculus BC", "topic": "Series", "type": "Lessons", "url": "https://www.mathmedic.com/", "description": "Calculus BC lesson plans." },
       { "id": "ap_stats", "category": "AP Statistics", "topic": "Inference", "type": "Lessons", "url": "https://www.statsmedic.com/", "description": "AP Stats interactive lessons." },

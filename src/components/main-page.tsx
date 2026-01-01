@@ -33,11 +33,12 @@ import type { WeeklyStudyPath } from '@/ai/schemas/study-path';
 import { StudyPathDashboard } from './study-path-dashboard';
 import { useAuth } from '@/hooks/useAuth';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from './ui/scroll-area';
 
 const formSchema = z.discriminatedUnion('inputType', [
   z.object({
@@ -65,11 +66,9 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
   const [isLoading, setIsLoading] = useState(false);
   const [studyPath, setStudyPath] = useState<WeeklyStudyPath[] | null>(null);
   const [inputType, setInputType] = useState<'url' | 'text'>('url');
-  const [showApSearch, setShowApSearch] = useState(false);
-  const [isExamTypeSelected, setIsExamTypeSelected] = useState(false);
+  const [showApClasses, setShowApClasses] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
-  const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -130,34 +129,35 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
     }
   }
 
-  const handleExamTypeChange = (value: string) => {
-    form.setValue('examType', value);
+  const handleExamTypeChange = (value: string, closePopover: () => void) => {
     if (value === 'AP Classes') {
-      setShowApSearch(true);
-      setIsExamTypeSelected(false); // Don't finalize selection yet, wait for specific AP class
+        setShowApClasses(true);
+        // Don't set the value or close the popover, just reveal the next step
     } else {
-      setShowApSearch(false);
-      setIsExamTypeSelected(true);
+        form.setValue('examType', value);
+        setShowApClasses(false);
+        closePopover();
     }
   }
   
-  const handleApClassSelect = (value: string) => {
+  const handleApClassSelect = (value: string, closePopover: () => void) => {
     form.setValue('examType', value);
-    setIsExamTypeSelected(true);
+    setShowApClasses(false);
+    closePopover();
   }
 
   const resetExamSelection = () => {
     form.setValue('examType', '');
-    setIsExamTypeSelected(false);
-    setShowApSearch(false);
+    setShowApClasses(false);
   }
 
   if (studyPath) {
     return <StudyPathDashboard studyPath={studyPath} onReset={() => setStudyPath(null)} />;
   }
   
-  const isButtonDisabled = isLoading || !isExamTypeSelected;
   const selectedExamType = form.watch('examType');
+  const isButtonDisabled = isLoading || !selectedExamType;
+  const examOptions = showApClasses ? AP_CLASSES : EXAM_CATEGORIES;
 
   return (
     <div className="w-full max-w-4xl flex flex-col items-center text-center animate-in fade-in-50 duration-500">
@@ -230,7 +230,7 @@ Unit 3: Advanced Calculus"
                                     )}
 
                                     <div className="flex flex-col items-center space-y-4">
-                                       {isExamTypeSelected ? (
+                                       {selectedExamType ? (
                                             <div className="w-full md:w-1/2 flex items-center justify-center gap-2 p-3 bg-muted rounded-lg">
                                                 <span className="text-muted-foreground text-sm">Selected:</span>
                                                 <Badge variant="secondary">{selectedExamType}</Badge>
@@ -240,124 +240,69 @@ Unit 3: Advanced Calculus"
                                                 </Button>
                                             </div>
                                        ) : (
-                                            <>
-                                                <FormField
-                                                    control={form.control}
-                                                    name="examType"
-                                                    render={({ field }) => (
-                                                        <FormItem className="w-full md:w-1/2">
-                                                            <FormLabel className="sr-only">Exam Category</FormLabel>
-                                                            <Popover>
-                                                                <PopoverTrigger asChild>
-                                                                    <FormControl>
-                                                                        <Button
-                                                                            variant="outline"
-                                                                            role="combobox"
-                                                                            className={cn(
-                                                                                "w-full justify-between h-12 text-base bg-[#F9FAFB]",
-                                                                                !field.value && "text-muted-foreground"
-                                                                            )}
-                                                                        >
-                                                                            {field.value
-                                                                                ? EXAM_CATEGORIES.find(
-                                                                                    (exam) => exam === field.value
-                                                                                ) || (AP_CLASSES.includes(field.value) ? 'AP Classes' : 'Select Exam Type')
-                                                                                : "Select Exam Type"}
-                                                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                                        </Button>
-                                                                    </FormControl>
-                                                                </PopoverTrigger>
-                                                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                                                    <Command>
-                                                                        
-                                                                        <CommandEmpty>No exam type found.</CommandEmpty>
-                                                                        <CommandGroup>
-                                                                            {EXAM_CATEGORIES.map((exam) => (
-                                                                                <CommandItem
-                                                                                    value={exam}
-                                                                                    key={exam}
-                                                                                    onSelect={() => {
-                                                                                        handleExamTypeChange(exam);
-                                                                                    }}
-                                                                                >
-                                                                                    <Check
-                                                                                        className={cn(
-                                                                                            "mr-2 h-4 w-4",
-                                                                                            exam === field.value
-                                                                                                ? "opacity-100"
-                                                                                                : "opacity-0"
-                                                                                        )}
-                                                                                    />
-                                                                                    {exam}
-                                                                                </CommandItem>
-                                                                            ))}
-                                                                        </CommandGroup>
-                                                                    </Command>
-                                                                </PopoverContent>
-                                                            </Popover>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                                {showApSearch && (
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="examType"
-                                                        render={({ field }) => (
-                                                            <FormItem className="w-full md:w-1/2">
-                                                                <FormLabel className="sr-only">AP Class</FormLabel>
-                                                                <Popover>
-                                                                    <PopoverTrigger asChild>
-                                                                        <FormControl>
-                                                                            <Button
-                                                                                variant="outline"
-                                                                                role="combobox"
-                                                                                className={cn(
-                                                                                    "w-full justify-between h-12 text-base bg-[#F9FAFB]",
-                                                                                    !field.value && "text-muted-foreground"
-                                                                                )}
-                                                                            >
-                                                                                {field.value && field.value !== 'AP Classes'
-                                                                                    ? field.value
-                                                                                    : "Select AP Class"}
-                                                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                                            </Button>
-                                                                        </FormControl>
-                                                                    </PopoverTrigger>
-                                                                    <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[--radix-popover-content-available-height] p-0">
-                                                                        <Command>
-                                                                            <CommandInput placeholder="Search AP Class..." />
-                                                                            <CommandEmpty>No AP class found.</CommandEmpty>
+                                            <FormField
+                                                control={form.control}
+                                                name="examType"
+                                                render={({ field }) => (
+                                                    <FormItem className="w-full md:w-1/2">
+                                                        <FormLabel className="sr-only">Exam Category</FormLabel>
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <FormControl>
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        role="combobox"
+                                                                        className={cn(
+                                                                            "w-full justify-between h-12 text-base bg-[#F9FAFB]",
+                                                                            !field.value && "text-muted-foreground"
+                                                                        )}
+                                                                    >
+                                                                        {showApClasses ? "Select AP Class" : "Select Exam Type"}
+                                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                                    </Button>
+                                                                </FormControl>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                                <Command>
+                                                                    <CommandInput placeholder={showApClasses ? "Search AP Class..." : "Search Exam..."} />
+                                                                    <CommandEmpty>No results found.</CommandEmpty>
+                                                                    <CommandList>
+                                                                        <ScrollArea className="h-72">
                                                                             <CommandGroup>
-                                                                                {AP_CLASSES.map((apClass) => (
+                                                                                {examOptions.map((exam) => (
                                                                                     <CommandItem
-                                                                                        value={apClass}
-                                                                                        key={apClass}
-                                                                                        onSelect={() => {
-                                                                                            handleApClassSelect(apClass);
+                                                                                        value={exam}
+                                                                                        key={exam}
+                                                                                        onSelect={(currentValue) => {
+                                                                                            const popoverTrigger = document.querySelector('[aria-controls="radix-popover-content-"][data-state="open"]');
+                                                                                            if(showApClasses) {
+                                                                                                handleApClassSelect(currentValue, () => popoverTrigger?.dispatchEvent(new Event('click', { bubbles: true })))
+                                                                                            } else {
+                                                                                                handleExamTypeChange(currentValue, () => popoverTrigger?.dispatchEvent(new Event('click', { bubbles: true })))
+                                                                                            }
                                                                                         }}
                                                                                     >
                                                                                         <Check
                                                                                             className={cn(
                                                                                                 "mr-2 h-4 w-4",
-                                                                                                apClass === field.value
+                                                                                                exam === field.value
                                                                                                     ? "opacity-100"
                                                                                                     : "opacity-0"
                                                                                             )}
                                                                                         />
-                                                                                        {apClass}
+                                                                                        {exam}
                                                                                     </CommandItem>
                                                                                 ))}
                                                                             </CommandGroup>
-                                                                        </Command>
-                                                                    </PopoverContent>
-                                                                </Popover>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
+                                                                        </ScrollArea>
+                                                                    </CommandList>
+                                                                </Command>
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                        <FormMessage />
+                                                    </FormItem>
                                                 )}
-                                            </>
+                                            />
                                        )}
                                     </div>
                                     
@@ -437,5 +382,3 @@ Unit 3: Advanced Calculus"
     </div>
   );
 }
-
-    

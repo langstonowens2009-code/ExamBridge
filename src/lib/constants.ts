@@ -4,13 +4,14 @@ export const EXAM_CATEGORIES = [
   "AP Classes",
 ];
 
+// This now matches the `category` field in resourcesData.json
 export const AP_CLASSES = [
+    "AP Physics 1",
     "AP Physics C: Mechanics",
     "AP Physics C: Electricity & Magnetism",
     "AP Chemistry",
     "AP Calculus BC",
     "AP Biology",
-    "AP Physics 1",
     "AP U.S. History",
     "AP English Literature",
     "AP World History",

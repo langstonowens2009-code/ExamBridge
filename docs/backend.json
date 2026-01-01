@@ -1,0 +1,153 @@
+{
+  "entities": {
+    "StudyPath": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "StudyPath",
+      "type": "object",
+      "description": "Represents a generated study path for a user based on a provided URL and exam type.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the StudyPath entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who created this study path. (Relationship: User 1:N StudyPath)"
+        },
+        "examType": {
+          "type": "string",
+          "description": "The type of exam the study path is for (e.g., SAT, ACT, USMLE)."
+        },
+        "originalUrl": {
+          "type": "string",
+          "description": "The original URL of the paid resource used to generate the study path.",
+          "format": "uri"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "The timestamp when the study path was generated.",
+          "format": "date-time"
+        },
+        "modules": {
+          "type": "array",
+          "description": "An array of modules within the study path.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "examType",
+        "originalUrl",
+        "timestamp",
+        "modules"
+      ]
+    },
+    "Module": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Module",
+      "type": "object",
+      "description": "Represents a module within a StudyPath, containing the topic, a link to a free resource, and a description.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Module entity."
+        },
+        "studyPathId": {
+          "type": "string",
+          "description": "Reference to the StudyPath this module belongs to. (Relationship: StudyPath 1:N Module)"
+        },
+        "topic": {
+          "type": "string",
+          "description": "The name of the topic covered in this module."
+        },
+        "link": {
+          "type": "string",
+          "description": "A link to a free resource that covers this topic.",
+          "format": "uri"
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief explanation of why this free resource is a good match for the topic."
+        }
+      },
+      "required": [
+        "id",
+        "studyPathId",
+        "topic",
+        "link",
+        "description"
+      ]
+    },
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the ExamBridge platform.  Does NOT contain authentication information.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity.  This should align with the Firebase Authentication UID."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "email"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profile information. The 'userId' parameter corresponds to the Firebase Authentication UID.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user, matching the Firebase Authentication UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/studyPaths/{studyPathId}",
+        "definition": {
+          "entityName": "StudyPath",
+          "schema": {
+            "$ref": "#/backend/entities/StudyPath"
+          },
+          "description": "Stores study paths generated for each user. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user, matching the Firebase Authentication UID."
+            },
+            {
+              "name": "studyPathId",
+              "description": "The unique identifier for the study path."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to be secure, scalable, and easily debuggable, following the core design principles and strategy mandates. The structure prioritizes Authorization Independence by denormalizing the userId onto the StudyPath documents, eliminating the need for `get()` calls in security rules. This allows atomic operations (transactions/batches) and simplifies debugging. Structural Segregation is enforced by storing study paths specific to each user in their own subcollection (`/users/{userId}/studyPaths`). This ensures that all documents within a collection share the same security requirements, simplifying the security rules. Access Modeling leverages path-based ownership (`/users/{userId}/studyPaths/{studyPathId}`) for user-owned data. This structure naturally enforces that only a logged-in user can create and read their own study plans, as the security rules will check if the `request.auth.uid` matches the `userId` in the path and document. The modules are stored as an array within each StudyPath document to keep the structure simple."
+  }
+}

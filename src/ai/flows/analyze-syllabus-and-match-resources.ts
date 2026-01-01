@@ -5,8 +5,6 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { WeeklyStudyPathModuleSchema } from '@/ai/schemas/study-path';
 import syllabusData from '@/lib/syllabusData.json';
-import { db } from '@/lib/firebaseAdmin'; // Use the server-side admin SDK
-import { googleSearch, browse } from '@genkit-ai/google-genai';
 
 const formInputSchema = z.object({
   examType: z.string(),
@@ -22,8 +20,8 @@ const studyPathOutputSchema = z.array(WeeklyStudyPathModuleSchema);
 const fallbackResult = [{
     week: 'Week 1',
     modules: [{
-        topic: 'Search Timed Out',
-        description: 'The AI search took too long to complete. This can happen during peak hours. Please try generating the plan again.',
+        topic: 'AI Generation Failed',
+        description: 'The AI tutor took too long to respond or an unexpected error occurred. This can happen during peak hours. Please try generating the plan again.',
         link: '#'
     }]
 }];
@@ -39,17 +37,14 @@ type SyllabusData = {
 const localSyllabusData = syllabusData as SyllabusData;
 
 /**
- * Acts as an Adaptive Learning Tutor with a Hybrid Search model.
- * 1. It first queries a local Firestore `resources` database.
- * 2. If high-quality, pre-vetted resources are found, it uses them exclusively.
- * 3. If no resources are found, it falls back to a web search.
- * 4. It also checks for user-specific stats to adapt the plan.
+ * Acts as an Expert AI Tutor that generates a study plan from its internal knowledge.
+ * It does not use web search or external databases to ensure speed and reliability.
  */
 export async function analyzeSyllabusAndMatchResources(
   input: z.infer<typeof formInputSchema>
 ): Promise<z.infer<typeof studyPathOutputSchema>> {
   try {
-    const { examType, syllabusText, testDate, customInstructions, userId } = input;
+    const { examType, syllabusText, testDate, customInstructions } = input;
 
     // Step 1: Define the curriculum blueprint.
     let syllabusContent: string;
@@ -63,47 +58,10 @@ export async function analyzeSyllabusAndMatchResources(
         planSourceNote = `This plan is structured based on the syllabus you provided for '${examType}'.`;
     } else {
         planSourceNote = `This plan is structured for the topic: '${examType}'.`;
-        syllabusContent = `The user wants to create a study plan for the exam or topic: '${examType}'. Please structure a 4-week study plan.`;
+        syllabusContent = `The user wants to create a study plan for the exam or topic: '${examType}'. Please structure a 4-week study plan based on the typical curriculum for this topic.`;
     }
 
-    // Step 2 (HYBRID LOGIC): Query Firestore first.
-    console.log(`Querying Firestore for resources with category matching: ${examType}`);
-    const resourcesSnapshot = await db.collection('resources').where('category', '==', examType).get();
-    const availableResources = resourcesSnapshot.docs.map(doc => doc.data());
-    
-    let resourcesContext = '';
-    let searchTools = []; // By default, no search tools.
-    
-    if (availableResources.length > 0) {
-        console.log(`Found ${availableResources.length} resources in Firestore. Using database-first approach.`);
-        resourcesContext = `
-            HERE IS YOUR LIBRARY OF EXPERT-VETTED RESOURCES. USE THESE *ONLY*:
-            ${JSON.stringify(availableResources, null, 2)}
-        `;
-        // Web search is disabled when we have database results.
-    } else {
-        console.log(`No resources found in Firestore for '${examType}'. Falling back to web search.`);
-        resourcesContext = `You did not find any resources in the internal database. Use your search tool to find 3-5 high-quality, free study websites for this exam.`;
-        searchTools = [googleSearch, browse]; // Enable search tools as a fallback.
-    }
-
-    // Step 3: (Adaptive Logic) Fetch user's stats if available.
-    let userStatsContext = "No user-specific data provided. Generate a standard, balanced study plan.";
-    if (userId) {
-        const userStatsRef = db.collection('userStats').doc(userId);
-        const userStatsDoc = await userStatsRef.get();
-        if (userStatsDoc.exists) {
-            const stats = userStatsDoc.data();
-            userStatsContext = `
-                This is an adaptive plan. The user's stats are:
-                - Weak Topics: ${JSON.stringify(stats?.weakTopics || ['None specified'])}
-                - Current Mastery Level: ${stats?.masteryLevel || 'Not specified'}
-                Your primary goal is to create a plan that HEAVILY prioritizes their weak topics. Dedicate more time and modules to these areas.
-            `;
-        }
-    }
-
-    // Step 4: Determine the timeline for the study plan.
+    // Step 2: Determine the timeline for the study plan.
     let timelinePrompt = `Create a study plan organized by week. A standard plan is 4 weeks, but adjust if the user's test date suggests a different timeline.`;
     if (testDate) {
       const today = new Date();
@@ -113,38 +71,37 @@ export async function analyzeSyllabusAndMatchResources(
       timelinePrompt = `The user's test is on ${testDate.toLocaleDateString()}. They have ${daysLeft} days (~${weeksLeft} full weeks) to prepare. Create a weekly study plan that fits this timeline.`;
     }
 
-    // Step 5: Synthesize and build the plan.
+    // Step 3: Synthesize and build the plan using internal knowledge.
     const architectResult = await ai.generate({
       model: 'gemini-1.5-pro-latest',
-      tools: searchTools,
       prompt: `
-        You are an expert Strategic Personal Tutor. Your task is to create a professional, personalized, weekly study roadmap.
+        You are an Expert AP & SAT Tutor with 20+ years of experience. Your task is to create a professional, personalized, weekly study roadmap based on your deep internal knowledge.
+
+        **DO NOT USE EXTERNAL LINKS OR SEARCH THE WEB.**
 
         Your Process:
-        1.  **Analyze the Curriculum:** Review the provided syllabus structure. This is your primary blueprint.
-        2.  **Check Your Library:** You have been provided with a library of expert-vetted resources. If this library is not empty, you MUST use links from it to build the study plan.
-        3.  **Use Search as a Fallback:** If your resource library is empty for this topic, and ONLY in that case, use your search tools to find 3-5 high-quality, free educational websites.
-        4.  **Force Variety:** Do not use the same link for every module. A professional roadmap includes a mix of resource types. Assign a variety of videos, practice sets, and guides from the provided list.
-        5.  **Adapt to the User:** Review the user's stats. If they have weak topics, build the plan to focus heavily on those areas.
-        6.  **Follow Instructions:** Adhere to the user's timeline and custom instructions.
+        1.  **Analyze the Curriculum:** Review the provided syllabus or topic. This is your primary blueprint.
+        2.  **Generate Core Concepts:** For each topic, use your expertise to outline the most critical concepts, formulas, and vocabulary.
+        3.  **Identify Common Pitfalls:** Warn the user about common mistakes or misunderstandings for each topic.
+        4.  **Create Actionable Study Tasks:** Instead of providing links, generate specific 'Self-Study Activities'. These should be concrete tasks the user can perform.
+            -   Good Example: 'For cellular respiration, draw and label the stages of glycolysis and the Krebs cycle. Then, write a one-paragraph summary of the electron transport chain's purpose.'
+            -   Bad Example: 'Study cellular respiration.'
+        5.  **Suggest Search Terms:** For the 'link' field, provide a placeholder of '#'. In the 'description', guide the user on what to search for on trusted platforms.
+            -   Example Description: "...To practice this, search for 'AP Biology Unit 3 practice questions' on the Official College Board AP Classroom website or Khan Academy."
 
         ${timelinePrompt}
 
         **Final Output Instructions:**
         - Format your final output as a clean JSON array of weekly study modules.
         - Each module must have 'topic', 'description', and 'link'.
+        - The 'link' field MUST be '#'.
+        - The 'description' for each module should include the concepts, pitfalls, and a self-study activity.
         - Prepend the following note to the 'description' of the very FIRST module: "${planSourceNote}"
         - Only output the final JSON array.
 
         ---
         HERE IS THE CURRICULUM BLUEPRINT:
         ${syllabusContent}
-        ---
-        HERE IS THE USER'S ADAPTIVE LEARNING PROFILE:
-        ${userStatsContext}
-        ---
-        HERE ARE YOUR AVAILABLE RESOURCES (MAY BE EMPTY):
-        ${resourcesContext}
         ---
         USER'S CUSTOM INSTRUCTIONS:
         ${customInstructions || 'No custom instructions provided.'}

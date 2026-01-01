@@ -31,7 +31,7 @@ export default function DashboardPage() {
             // Parse the ISO string date back to a Date object
             const parsedPlans = result.data.map((plan: any) => ({
               ...plan,
-              createdAt: new Date(plan.createdAt),
+              createdAt: new Date(plan.createdAt.seconds * 1000), // convert Firestore Timestamp
             }));
             setPlans(parsedPlans);
           } else {
@@ -130,7 +130,7 @@ export default function DashboardPage() {
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                         <BookOpen className="h-5 w-5" />
                       </span>
-                      <span>{plan.examType}</span>
+                      <span>{plan.request.examType}</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex-grow">
@@ -138,7 +138,7 @@ export default function DashboardPage() {
                     Created {formatDistanceToNow(plan.createdAt, { addSuffix: true })}
                   </CardDescription>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {plan.modules?.reduce((acc: number, week: any) => acc + week.modules.length, 0) || 0} total modules
+                    {plan.response?.reduce((acc: number, week: any) => acc + week.modules.length, 0) || 0} total modules
                   </p>
                 </CardContent>
               </Card>

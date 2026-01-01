@@ -2,7 +2,7 @@
 
 import { generateStudyPlan } from '@/ai/flows/generate-study-plan-flow';
 import { format } from 'date-fns';
-import { addDoc, collection } from 'firebase/firestore';
+import { addDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { firestore } from '@/firebase/config'; // Assuming you have a Firestore instance exported
 
 type TopicInput = {
@@ -69,7 +69,19 @@ export async function generateAndSaveStudyPlanAction(input: ActionInput): Promis
  * Retrieves the list of study plans for the user's dashboard.
  */
 export async function getStudyPlansAction(userId: string): Promise<ActionResult> {
-  // This function will be implemented later to fetch data for the dashboard.
-  // For now, it's a placeholder.
-  return { success: true, data: [] };
+  if (!userId) {
+    return { success: false, error: 'User not authenticated.' };
+  }
+
+  try {
+    const plansRef = collection(firestore, 'users', userId, 'studyPlans');
+    const q = query(plansRef, where('userId', '==', userId));
+    const querySnapshot = await getDocs(q);
+    const plans = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    return { success: true, data: plans };
+  } catch (error: any) {
+    console.error('Error fetching study plans:', error);
+    return { success: false, error: 'Failed to retrieve study plans.' };
+  }
 }

@@ -35,5 +35,242 @@
             { "name": "Reading", "weight": 0.25, "units": [{"topic": "Key Ideas and Details"}, {"topic": "Craft and Structure"}, {"topic": "Integration of Knowledge and Ideas"}] },
             { "name": "Science", "weight": 0.25, "units": [{"topic": "Interpretation of Data"}, {"topic": "Scientific Investigation"}, {"topic": "Evaluation of Models, Inferences, and Experimental Results"}] }
         ]
+    },
+    "AP Physics C: Mechanics": {
+        "name": "AP Physics C: Mechanics",
+        "description": "Explores concepts of kinematics, Newton's laws of motion, work, energy, and power.",
+        "sections": [
+            {
+                "name": "Mechanics",
+                "units": [
+                    {"topic": "Kinematics"},
+                    {"topic": "Newton’s Laws of Motion"},
+                    {"topic": "Work, Energy, and Power"},
+                    {"topic": "Systems of Particles and Linear Momentum"},
+                    {"topic": "Circular Motion and Rotation"},
+                    {"topic": "Oscillations and Gravitation"}
+                ]
+            }
+        ]
+    },
+    "AP Physics C: Electricity & Magnetism": {
+        "name": "AP Physics C: Electricity & Magnetism",
+        "description": "Explores concepts of electrostatics, conductors, capacitors, electric circuits, magnetic fields, and electromagnetism.",
+        "sections": [
+            {
+                "name": "Electricity & Magnetism",
+                "units": [
+                    {"topic": "Electrostatics"},
+                    {"topic": "Conductors, Capacitors, Dielectrics"},
+                    {"topic": "Electric Circuits"},
+                    {"topic": "Magnetic Fields"},
+                    {"topic": "Electromagnetism"},
+                    {"topic": "Electromagnetic Induction"}
+                ]
+            }
+        ]
+    },
+    "AP Chemistry": {
+        "name": "AP Chemistry",
+        "description": "Explores chemical concepts and principles, including atomic structure, intermolecular forces, chemical reactions, and thermodynamics.",
+        "sections": [
+            {
+                "name": "Chemistry",
+                "units": [
+                    {"topic": "Atomic Structure and Properties"},
+                    {"topic": "Molecular and Ionic Compound Structure and Properties"},
+                    {"topic": "Intermolecular Forces and Properties"},
+                    {"topic": "Chemical Reactions"},
+                    {"topic": "Kinetics"},
+                    {"topic": "Thermodynamics"},
+                    {"topic": "Equilibrium"},
+                    {"topic": "Acids and Bases"},
+                    {"topic": "Applications of Thermodynamics"}
+                ]
+            }
+        ]
+    },
+    "AP Calculus BC": {
+        "name": "AP Calculus BC",
+        "description": "Explores concepts of limits, differentiation, integration, and infinite sequences and series.",
+        "sections": [
+            {
+                "name": "Calculus",
+                "units": [
+                    {"topic": "Limits and Continuity"},
+                    {"topic": "Differentiation: Definition and Fundamental Properties"},
+                    {"topic": "Differentiation: Composite, Implicit, and Inverse Functions"},
+                    {"topic": "Contextual Applications of Differentiation"},
+                    {"topic": "Analytical Applications of Differentiation"},
+                    {"topic": "Integration and Accumulation of Change"},
+                    {"topic": "Differential Equations"},
+                    {"topic": "Applications of Integration"},
+                    {"topic": "Parametric Equations, Polar Coordinates, and Vector-Valued Functions"},
+                    {"topic": "Infinite Sequences and Series"}
+                ]
+            }
+        ]
+    },
+    "AP Biology": {
+        "name": "AP Biology",
+        "description": "Explores concepts of evolution, cellular processes, genetics, and ecology.",
+        "sections": [
+            {
+                "name": "Biology",
+                "units": [
+                    {"topic": "Chemistry of Life"},
+                    {"topic": "Cell Structure and Function"},
+                    {"topic": "Cellular Energetics"},
+                    {"topic": "Cell Communication and Cell Cycle"},
+                    {"topic": "Heredity"},
+                    {"topic": "Gene Expression and Regulation"},
+                    {"topic": "Natural Selection"},
+                    {"topic": "Ecology"}
+                ]
+            }
+        ]
+    },
+    "AP Physics 1": {
+        "name": "AP Physics 1",
+        "description": "An algebra-based, introductory college-level physics course.",
+        "sections": [
+            {
+                "name": "Physics 1",
+                "units": [
+                    {"topic": "Kinematics"},
+                    {"topic": "Dynamics"},
+                    {"topic": "Circular Motion and Gravitation"},
+                    {"topic": "Energy"},
+                    {"topic": "Momentum"},
+                    {"topic": "Simple Harmonic Motion"},
+                    {"topic": "Torque and Rotational Motion"}
+                ]
+            }
+        ]
+    },
+    "AP U.S. History": {
+        "name": "AP U.S. History",
+        "description": "Covers American history from pre-Columbian societies to the present.",
+        "sections": [
+            {
+                "name": "Periods",
+                "units": [
+                    {"topic": "1491–1607: Pre-Columbian Societies"},
+                    {"topic": "1607–1754: Colonization"},
+                    {"topic": "1754–1800: American Revolution"},
+                    {"topic": "1800–1848: Early Republic"},
+                    {"topic": "1844–1877: Civil War and Reconstruction"},
+                    {"topic": "1865–1898: Industrialization"},
+                    {"topic": "1890–1945: Progressive Era to WWII"},
+                    {"topic": "1945–1980: Cold War"},
+                    {"topic": "1980–Present"}
+                ]
+            }
+        ]
+    },
+    "AP English Literature": {
+        "name": "AP English Literature and Composition",
+        "description": "Involves reading, analyzing, and writing about imaginative literature (fiction, poetry, drama).",
+        "sections": [
+            {
+                "name": "Skills",
+                "units": [
+                    {"topic": "Short Fiction"},
+                    {"topic": "Poetry"},
+                    {"topic": "Longer Fiction or Drama"},
+                    {"topic": "Literary Analysis and Interpretation"},
+                    {"topic": "Literary Argument"},
+                    {"topic": "Style and Rhetorical Analysis"}
+                ]
+            }
+        ]
+    },
+    "AP World History": {
+        "name": "AP World History: Modern",
+        "description": "Covers modern history from c. 1200 CE to the present.",
+        "sections": [
+            {
+                "name": "Periods",
+                "units": [
+                    {"topic": "1200–1450: Global Tapestry"},
+                    {"topic": "1450–1750: Exchange and Interaction"},
+                    {"topic": "1750–1900: Industrialization"},
+                    {"topic": "1900–Present: Global Conflict and Modernization"}
+                ]
+            }
+        ]
+    },
+    "AP Statistics": {
+        "name": "AP Statistics",
+        "description": "Introduces the major concepts and tools for collecting, analyzing, and drawing conclusions from data.",
+        "sections": [
+            {
+                "name": "Statistics",
+                "units": [
+                    {"topic": "Exploring One-Variable Data"},
+                    {"topic": "Exploring Two-Variable Data"},
+                    {"topic": "Collecting Data"},
+                    {"topic": "Probability, Random Variables, and Distributions"},
+                    {"topic": "Sampling Distributions"},
+                    {"topic": "Inference for Categorical Data"},
+                    {"topic": "Inference for Quantitative Data"}
+                ]
+            }
+        ]
+    },
+    "AP Computer Science A": {
+        "name": "AP Computer Science A",
+        "description": "An introduction to computer science with an emphasis on object-oriented programming using Java.",
+        "sections": [
+            {
+                "name": "Java",
+                "units": [
+                    {"topic": "Primitive Types"},
+                    {"topic": "Using Objects"},
+                    {"topic": "Boolean Expressions and If Statements"},
+                    {"topic": "Iteration"},
+                    {"topic": "Writing Classes"},
+                    {"topic": "Array"},
+                    {"topic": "ArrayList"},
+                    {"topic": "2D Array"},
+                    {"topic": "Inheritance"},
+                    {"topic": "Recursion"}
+                ]
+            }
+        ]
+    },
+    "AP Microeconomics": {
+        "name": "AP Microeconomics",
+        "description": "Studies the principles of economics that apply to the functions of individual decision-makers.",
+        "sections": [
+            {
+                "name": "Microeconomics",
+                "units": [
+                    {"topic": "Basic Economic Concepts"},
+                    {"topic": "Supply and Demand"},
+                    {"topic": "Production, Cost, and Perfect Competition"},
+                    {"topic": "Imperfect Competition"},
+                    {"topic": "Factor Markets"},
+                    {"topic": "Market Failure and the Role of Government"}
+                ]
+            }
+        ]
+    },
+    "AP Macroeconomics": {
+        "name": "AP Macroeconomics",
+        "description": "Studies the principles of economics that apply to an economic system as a whole.",
+        "sections": [
+            {
+                "name": "Macroeconomics",
+                "units": [
+                    {"topic": "Basic Economic Concepts"},
+                    {"topic": "Economic Indicators and the Business Cycle"},
+                    {"topic": "National Income and Price Determination"},
+                    {"topic": "Financial Sector"},
+                    {"topic": "Long-Run Consequences of Stabilization Policies"},
+                    {"topic": "Open Economy: International Trade and Finance"}
+                ]
+            }
+        ]
     }
 }

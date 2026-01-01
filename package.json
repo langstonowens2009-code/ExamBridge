@@ -2,6 +2,7 @@
   "name": "nextn",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev --port 9002",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
@@ -10,7 +11,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "seed:db": "node scripts/manual-seed.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "3.10.0",

@@ -10,7 +10,7 @@
     --card-foreground: 220 20% 20%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 47.4% 11.2%;
-    --primary: 160 84% 39%; /* #10b981 - Emerald Green */
+    --primary: 145 63% 49%; /* #2ECC71 - Softer Green */
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -22,8 +22,8 @@
     --destructive-foreground: 210 40% 98%;
     --border: 220 13% 89%; /* #dde1e6 */
     --input: 220 13% 89%;
-    --ring: 160 84% 39%; /* Emerald Green for focus ring */
-    --radius: 0.5rem;
+    --ring: 145 63% 49%; /* Softer Green for focus ring */
+    --radius: 0.75rem; /* 12px */
   }
 
   .dark {
@@ -34,7 +34,7 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 160 84% 39%;
+    --primary: 145 63% 49%;
     --primary-foreground: 222.2 47.4% 11.2%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -46,7 +46,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 160 84% 39%;
+    --ring: 145 63% 49%;
   }
 }
 

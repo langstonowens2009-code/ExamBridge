@@ -15,6 +15,7 @@
     "seed:db": "node scripts/manual-seed.mjs"
   },
   "dependencies": {
+    "@genkit-ai/google-genai": "^1.20.0",
     "@hookform/resolvers": "3.10.0",
     "@notionhq/client": "^2.2.15",
     "@radix-ui/react-accordion": "^1.2.0",
@@ -44,7 +45,7 @@
     "date-fns": "^3.6.0",
     "dotenv": "^16.4.5",
     "embla-carousel-react": "^8.1.5",
-    "firebase": "^10.12.2",
+    "firebase": "^10.14.1",
     "firebase-admin": "^12.1.1",
     "genkit": "^1.20.0",
     "js-cookie": "^3.0.5",
@@ -59,8 +60,7 @@
     "tailwind-merge": "^2.3.0",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^9.0.1",
-    "zod": "^3.23.8",
-    "@genkit-ai/google-genai": "^1.20.0"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/js-cookie": "^3.0.6",

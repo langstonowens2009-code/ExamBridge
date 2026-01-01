@@ -4,8 +4,9 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { WeeklyStudyPathModuleSchema } from '@/ai/schemas/study-path';
 import syllabusData from '@/lib/syllabusData.json';
-import { db } from '@/lib/firebaseAdmin'; // Use the server-side admin SDK
+import { db } from '@/lib/firebaseAdmin'; 
 import { googleSearch, browse } from '@genkit-ai/google-genai';
+
 
 const formInputSchema = z.object({
   examType: z.string(),
@@ -26,7 +27,6 @@ const fallbackResult = [{
     }]
 }];
 
-// Type assertion for the imported JSON
 type SyllabusData = {
     [key: string]: {
         name: string;

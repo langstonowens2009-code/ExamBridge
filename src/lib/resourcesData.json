@@ -1,29 +1,19 @@
-
 {
     "resources": [
-        {
-            "id": "sat_math_khan_01",
-            "category": "SAT",
-            "topic": "Math",
-            "type": "Video Course",
-            "url": "https://www.khanacademy.org/test-prep/digital-sat",
-            "description": "Official Digital SAT Prep from Khan Academy, covering all sections including Algebra, Advanced Math, and Geometry."
-        },
-        {
-            "id": "act_english_crackact_01",
-            "category": "ACT",
-            "topic": "English",
-            "type": "Practice Test",
-            "url": "https://www.crackact.com/act/english/",
-            "description": "A large collection of free ACT English practice tests, helping with grammar, punctuation, and rhetorical skills."
-        },
-        {
-            "id": "ap_bio_bozeman_01",
-            "category": "AP Biology",
-            "topic": "All Topics",
-            "type": "Video Series",
-            "url": "http://www.bozemanscience.com/ap-biology",
-            "description": "Comprehensive video tutorials by Paul Andersen covering the entire AP Biology curriculum."
-        }
+      { "id": "sat_math_khan", "category": "SAT", "topic": "All Math", "type": "Video Course", "url": "https://www.khanacademy.org/test-prep/digital-sat", "description": "Official SAT Math prep." },
+      { "id": "act_science_prep", "category": "ACT", "topic": "Science", "type": "Practice", "url": "https://www.crackact.com/act/science/", "description": "Free ACT Science practice." },
+      { "id": "ap_phys_c_mech", "category": "AP Physics C (Mechanics)", "topic": "Mechanics", "type": "Map", "url": "https://www.physicsroadmap.com/", "description": "Physics C Mechanics roadmap." },
+      { "id": "ap_phys_c_em", "category": "AP Physics C (Electricity & Magnetism)", "topic": "E&M", "type": "Videos", "url": "https://www.flippingphysics.com/ap-physics-c-em.html", "description": "Physics C E&M review." },
+      { "id": "ap_phys_1", "category": "AP Physics 1", "topic": "Mechanics", "type": "Tutorials", "url": "https://www.physicsclassroom.com/", "description": "Visual physics tutorials." },
+      { "id": "ap_calc_bc", "category": "AP Calculus BC", "topic": "Series", "type": "Lessons", "url": "https://www.mathmedic.com/", "description": "Calculus BC lesson plans." },
+      { "id": "ap_stats", "category": "AP Statistics", "topic": "Inference", "type": "Lessons", "url": "https://www.statsmedic.com/", "description": "AP Stats interactive lessons." },
+      { "id": "ap_csa", "category": "AP Computer Science A", "topic": "Java", "type": "Textbook", "url": "https://runestone.academy/ns/books/published/csawesome/index.html", "description": "Free Java textbook." },
+      { "id": "ap_chem", "category": "AP Chemistry", "topic": "Thermodynamics", "type": "Study Kit", "url": "https://www.theastudy.com/ap-course-catalog/ap-chemistry", "description": "AP Chemistry flashcards." },
+      { "id": "ap_bio", "category": "AP Biology", "topic": "Cells", "type": "Guides", "url": "https://library.fiveable.me/ap-bio", "description": "AP Biology study guides." },
+      { "id": "ap_ush", "category": "AP U.S. History", "topic": "All Periods", "type": "Videos", "url": "https://www.youtube.com/@HeimlersHistory", "description": "Heimler's History review." },
+      { "id": "ap_world", "category": "AP World History", "topic": "Global", "type": "Sources", "url": "https://www.gilderlehrman.org/", "description": "World history source library." },
+      { "id": "ap_lit", "category": "AP English Literature", "topic": "Poetry", "type": "Pack", "url": "https://marcolearning.com/students/ap-study-guides/", "description": "English Lit study packs." },
+      { "id": "ap_micro", "category": "AP Microeconomics", "topic": "Supply", "type": "Videos", "url": "https://www.acdcecon.com/", "description": "Micro review videos." },
+      { "id": "ap_macro", "category": "AP Macroeconomics", "topic": "National", "type": "Practice", "url": "https://www.khanacademy.org/economics-finance-domain/ap-macroeconomics", "description": "AP Macro course." }
     ]
-}
+  }

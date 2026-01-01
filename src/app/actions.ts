@@ -30,31 +30,6 @@ type ActionResult = {
   error?: string;
 }
 
-// This function is being kept for potential future server-to-server admin tasks,
-// but it is not used in the current client-side flow for saving/fetching plans.
-// The client will handle this directly with its own auth context.
-async function getUserIdFromToken(idToken: string | undefined) {
-  // Dynamic import of firebase-admin
-  const admin = await import('firebase-admin');
-  const { getAuth } = await import('firebase-admin/auth');
-  
-  // Initialize admin app if not already initialized
-  if (admin.apps.length === 0) {
-    admin.initializeApp({
-        credential: admin.credential.applicationDefault(),
-    });
-  }
-
-  if (!idToken) return null;
-  try {
-    const decodedToken = await getAuth().verifyIdToken(idToken);
-    return decodedToken.uid;
-  } catch (error) {
-    console.error('Error verifying ID token:', error);
-    return null;
-  }
-}
-
 // Note: The responsibility of saving the study plan has been moved to the client-side
 // component that calls this action. This server action is now only responsible for
 // generating the study path from the AI. The client will take the output and save it

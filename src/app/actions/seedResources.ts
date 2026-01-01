@@ -33,7 +33,7 @@ export async function seedResourcesAction(): Promise<ActionResult> {
     console.log(`Successfully seeded ${resources.length} resources.`);
     return { success: true, count: resources.length };
   } catch (error: any) {
-    console.error("Error seeding resources:", error);
+    console.error("Error seeding resources:", error.stack || error);
     return { success: false, error: error.message || 'Failed to seed resources.' };
   }
 }

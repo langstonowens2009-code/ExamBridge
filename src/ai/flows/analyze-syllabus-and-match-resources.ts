@@ -4,7 +4,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { WeeklyStudyPathModuleSchema } from '@/ai/schemas/study-path';
 import syllabusData from '@/lib/syllabusData.json';
-import { db } from '@/lib/firebaseAdmin'; // Import the admin DB instance
+import { db } from '@/lib/firebaseAdmin'; // Use the server-side admin SDK
 
 const formInputSchema = z.object({
   examType: z.string(),
@@ -63,7 +63,7 @@ export async function analyzeSyllabusAndMatchResources(
         syllabusContent = `The user wants to create a study plan for the exam: '${examType}'. Please structure a 4-week study plan for this exam.`;
     }
 
-    // Step 2: Fetch relevant resources from Firestore
+    // Step 2: Fetch relevant resources from Firestore using the Admin SDK
     console.log(`Querying Firestore for resources with category matching: ${examType}`);
     const resourcesSnapshot = await db.collection('resources').where('category', '==', examType).get();
     const availableResources = resourcesSnapshot.docs.map(doc => doc.data());
@@ -79,10 +79,10 @@ export async function analyzeSyllabusAndMatchResources(
             ${JSON.stringify(availableResources, null, 2)}
         `;
     } else {
-        console.log(`No resources found in Firestore for category: ${examType}. The AI will have to find its own.`);
+        console.log(`No resources found in Firestore for category: ${examType}. The AI will have to find its own resources on the web.`);
         resourcesContext = `
             No pre-vetted resources were found in our database for this topic. You will need to find appropriate free resources on the web to build the study plan.
-            For each module you create, find and provide a direct link to a high-quality, free resource.
+            For each module you create, find and provide a direct link to a high-quality, free resource. This is a critical fallback step.
         `;
     }
 
@@ -104,9 +104,9 @@ export async function analyzeSyllabusAndMatchResources(
 
         Your Process:
         1.  **Analyze the Curriculum:** Review the provided syllabus structure. This is your primary blueprint.
-        2.  **Use Provided Resources:** Build the study plan using ONLY the list of available resources provided below. This is a strict requirement.
+        2.  **Use Provided Resources:** Build the study plan using ONLY the list of available resources provided below. This is a strict requirement. If the resource list is empty, you must find resources on the web.
         3.  **Adhere to User Instructions:** Carefully follow the user's custom instructions.
-        4.  **Synthesize the Plan:** Construct the weekly study plan. Each module in your plan must have a clear topic, a direct link to a resource from the provided list, and a description explaining WHY this resource is a good fit.
+        4.  **Synthesize the Plan:** Construct the weekly study plan. Each module in your plan must have a clear topic, a direct link to a resource, and a description explaining WHY this resource is a good fit.
         
         ${timelinePrompt}
 
@@ -152,6 +152,14 @@ export async function analyzeSyllabusAndMatchResources(
     if (error instanceof Error && (error.message.includes('DEADLINE_EXCEEDED') || error.message.includes('timeout'))) {
         return fallbackResult;
     }
-    return fallbackResult;
+    // For other errors, return a generic error structure if possible, or re-throw
+    return [{
+        week: 'Week 1',
+        modules: [{
+            topic: 'Error Generating Plan',
+            description: 'An unexpected error occurred while creating your study plan. Please try again.',
+            link: '#'
+        }]
+    }];
   }
 }

@@ -14,7 +14,7 @@ const serviceAccount: admin.ServiceAccount = {
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    projectId: 'exambridge-34136',
   });
   console.log('Firebase Admin SDK initialized.');
   console.log('Project ID used:', admin.app().options.projectId);

@@ -1,20 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { format } from "date-fns";
-import { Loader2, Link as LinkIcon, Type, Check, ChevronsUpDown, Calendar as CalendarIcon, X } from 'lucide-react';
-import { addDoc, collection, Timestamp } from 'firebase/firestore';
-import { db } from '@/firebase/firestore';
-
+import { Loader2, Check, ChevronsUpDown, Calendar as CalendarIcon, X, PlusCircle, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Calendar } from "@/components/ui/calendar";
 import {
   Form,
@@ -28,9 +21,8 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { EXAM_CATEGORIES, AP_CLASSES } from '@/lib/constants';
-import { generateStudyPathAction } from '@/app/actions';
-import type { WeeklyStudyPath } from '@/ai/schemas/study-path';
-import { StudyPathDashboard } from './study-path-dashboard';
+import syllabusData from '@/lib/syllabusData.json';
+import { generateAndSaveStudyPlan } from '@/app/actions/generate-plan';
 import { useAuth } from '@/hooks/useAuth';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -39,23 +31,37 @@ import { useRouter } from 'next/navigation';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from './ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from './ui/checkbox';
+import { v4 as uuidv4 } from 'uuid';
 
-const formSchema = z.discriminatedUnion('inputType', [
-  z.object({
-    inputType: z.literal('url'),
-    originalUrl: z.string().url({ message: 'Please enter a valid URL.' }),
-    examType: z.string().min(1, { message: 'Please select an exam type.' }),
-    testDate: z.date().optional(),
-    customInstructions: z.string().optional(),
-  }),
-  z.object({
-    inputType: z.literal('text'),
-    syllabusText: z.string().min(20, 'Syllabus text must be at least 20 characters.'),
-    examType: z.string().min(1, { message: 'Please select an exam type.' }),
-    testDate: z.date().optional(),
-    customInstructions: z.string().optional(),
-  }),
-]);
+// Zod schema for a single topic
+const topicSchema = z.object({
+  topic: z.string().min(1, 'Topic name is required.'),
+  difficulty: z.enum(['Easy', 'Hard']),
+});
+
+// Main form schema
+const formSchema = z.object({
+  examType: z.string().min(1, 'Please select an exam type.'),
+  testDate: z.date({ required_error: 'Test date is required.' }),
+  availableStudyDays: z.array(z.string()).min(1, 'Please select at least one study day.'),
+  topics: z.array(topicSchema).min(1, 'Please add at least one topic.'),
+});
+
+type SyllabusData = {
+    [key: string]: {
+        name: string;
+        description: string;
+        sections: {
+            name: string;
+            units: { topic: string; subtopics?: string[] }[];
+        }[];
+    };
+};
+
+const DAYS_OF_WEEK = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
 
 interface MainPageProps {
   openAccordionValue: string;
@@ -64,63 +70,69 @@ interface MainPageProps {
 
 export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPageProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [studyPath, setStudyPath] = useState<WeeklyStudyPath[] | null>(null);
-  const [inputType, setInputType] = useState<'url' | 'text'>('url');
   const [showApClasses, setShowApClasses] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      inputType: 'url',
-      originalUrl: '',
       examType: '',
-      customInstructions: '',
+      availableStudyDays: [],
+      topics: [],
     },
   });
 
-  const handleSwitchChange = (checked: boolean) => {
-    const newInputType = checked ? 'text' : 'url';
-    setInputType(newInputType);
-    const currentValues = form.getValues();
-    form.reset({
-      ...currentValues,
-      inputType: newInputType,
-      originalUrl: newInputType === 'text' ? '' : currentValues.originalUrl,
-      syllabusText: newInputType === 'url' ? undefined : currentValues.syllabusText,
-    });
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: 'topics'
+  });
+
+  const selectedExamType = form.watch('examType');
+
+  const getSyllabusTopics = () => {
+    const data = syllabusData as SyllabusData;
+    if (!selectedExamType || !data[selectedExamType as keyof SyllabusData]) return [];
+    
+    return data[selectedExamType as keyof SyllabusData].sections.flatMap(section => 
+        section.units.flatMap(unit => 
+            unit.subtopics ? unit.subtopics : unit.topic
+        )
+    );
   };
+  
+  const syllabusTopics = getSyllabusTopics();
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!user) {
+        toast({
+            variant: "destructive",
+            title: "Authentication Required",
+            description: "You must be logged in to create a study plan.",
+        });
+        return;
+    }
+    
     setIsLoading(true);
-    setStudyPath(null);
 
-    // Pass the form values and the user's ID to the server action
-    const result = await generateStudyPathAction(values, user?.uid);
+    const result = await generateAndSaveStudyPlan({
+        userId: user.uid,
+        testId: uuidv4(), // Generate a unique ID for the test plan
+        testName: values.examType,
+        testDate: values.testDate,
+        availableStudyDays: values.availableStudyDays,
+        topics: values.topics,
+    });
 
     setIsLoading(false);
 
-    if (result.success && result.data) {
-      setStudyPath(result.data);
-      // If the user is logged in, save the study plan to their profile.
-      if (user) {
-        try {
-          const studyPlansCollection = collection(db, 'users', user.uid, 'studyPlans');
-          await addDoc(studyPlansCollection, {
-            examType: values.examType,
-            createdAt: Timestamp.fromDate(new Date()),
-            modules: result.data,
-          });
-        } catch (error) {
-          console.error("Error saving study plan: ", error);
-          toast({
-            variant: "destructive",
-            title: "Could not save your plan.",
-            description: "Your new study plan was generated, but we couldn't save it to your profile.",
-          });
-        }
-      }
+    if (result.success && result.planId) {
+      toast({
+        title: "Plan Generated!",
+        description: "Your new study plan is ready. Redirecting you to the dashboard...",
+      });
+      router.push('/dashboard');
     } else {
       toast({
         variant: 'destructive',
@@ -133,7 +145,6 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
   const handleExamTypeChange = (value: string, closePopover: () => void) => {
     if (value === 'AP Classes') {
         setShowApClasses(true);
-        // Don't set the value or close the popover, just reveal the next step
     } else {
         form.setValue('examType', value);
         setShowApClasses(false);
@@ -149,15 +160,11 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
 
   const resetExamSelection = () => {
     form.setValue('examType', '');
+    form.reset({ ...form.getValues(), topics: [] }); // Reset topics when exam type changes
     setShowApClasses(false);
   }
 
-  if (studyPath) {
-    return <StudyPathDashboard studyPath={studyPath} onReset={() => setStudyPath(null)} />;
-  }
-  
-  const selectedExamType = form.watch('examType');
-  const isButtonDisabled = isLoading || !selectedExamType;
+  const isButtonDisabled = isLoading;
   const examOptions = showApClasses ? AP_CLASSES : EXAM_CATEGORIES;
 
   return (
@@ -172,69 +179,23 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
             <AccordionItem value="item-1" className="border-none">
                 <AccordionTrigger className="w-full h-12 text-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg shadow-primary/30 hover:shadow-primary/40 rounded-md px-6 hover:no-underline">
                      {isLoading ? (
-                        <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> AI Analyzing Syllabus...</>
+                        <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Generating Your Adaptive Plan...</>
                     ) : (
-                        <>Generate Free Study Path</>
+                        <>Create My Study Plan</>
                     )}
                 </AccordionTrigger>
                 <AccordionContent>
                     <Card className="w-full mt-4 shadow-sm bg-card border-primary/20 rounded-lg">
                         <CardContent className="p-6">
                             <Form {...form}>
-                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                                    <div className="flex items-center justify-center space-x-3 pb-4">
-                                        <LinkIcon className="h-4 w-4" />
-                                        <Label htmlFor="input-type-switch">Use URL</Label>
-                                        <Switch id="input-type-switch" checked={inputType === 'text'} onCheckedChange={handleSwitchChange} />
-                                        <Label htmlFor="input-type-switch">Use Text</Label>
-                                        <Type className="h-4 w-4" />
-                                    </div>
-
-                                    {inputType === 'url' ? (
-                                    <FormField
-                                        control={form.control}
-                                        name="originalUrl"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="sr-only">Resource URL</FormLabel>
-                                                <FormControl>
-                                                    <Input placeholder="https://www.paid-course.com" {...field} className="h-12 text-base bg-[#F9FAFB] focus:bg-white" />
-                                                </FormControl>
-                                                <FormDescription>
-                                                    Enter the URL of a paid study resource, and we'll find free alternatives.
-                                                </FormDescription>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    ) : (
-                                    <FormField
-                                        control={form.control}
-                                        name="syllabusText"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                            <FormLabel className="sr-only">Syllabus Text</FormLabel>
-                                            <FormControl>
-                                                <Textarea
-                                                placeholder="Paste your syllabus here... e.g.
-Unit 1: Algebra Basics
-Unit 2: Geometry Fundamentals
-Unit 3: Advanced Calculus"
-                                                className="min-h-[150px] text-base bg-[#F9FAFB] focus:bg-white"
-                                                {...field}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                        />
-                                    )}
-
+                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                                   
+                                    {/* Exam Type Selection */}
                                     <div className="flex flex-col items-center space-y-4">
                                        {selectedExamType ? (
-                                            <div className="w-full md:w-1/2 flex items-center justify-center gap-2 p-3 bg-muted rounded-lg">
-                                                <span className="text-muted-foreground text-sm">Selected:</span>
-                                                <Badge variant="secondary">{selectedExamType}</Badge>
+                                            <div className="w-full md:w-2/3 flex items-center justify-center gap-2 p-3 bg-muted rounded-lg">
+                                                <span className="text-muted-foreground text-sm">Selected Exam:</span>
+                                                <Badge variant="secondary" className="text-base">{selectedExamType}</Badge>
                                                 <Button variant="ghost" size="icon" className="h-6 w-6" onClick={resetExamSelection}>
                                                     <X className="h-4 w-4" />
                                                     <span className="sr-only">Change exam type</span>
@@ -245,8 +206,8 @@ Unit 3: Advanced Calculus"
                                                 control={form.control}
                                                 name="examType"
                                                 render={({ field }) => (
-                                                    <FormItem className="w-full md:w-1/2">
-                                                        <FormLabel className="sr-only">Exam Category</FormLabel>
+                                                    <FormItem className="w-full md:w-2/3">
+                                                        <FormLabel className="font-semibold text-lg mb-2 block">1. Select Your Exam</FormLabel>
                                                         <Popover>
                                                             <PopoverTrigger asChild>
                                                                 <FormControl>
@@ -275,7 +236,7 @@ Unit 3: Advanced Calculus"
                                                                                         value={exam}
                                                                                         key={exam}
                                                                                         onSelect={(currentValue) => {
-                                                                                            const popoverTrigger = document.querySelector('[aria-controls="radix-popover-content-"][data-state="open"]');
+                                                                                            const popoverTrigger = document.querySelector('[aria-controls^="radix-popover-content-"][data-state="open"]');
                                                                                             if(showApClasses) {
                                                                                                 handleApClassSelect(currentValue, () => popoverTrigger?.dispatchEvent(new Event('click', { bubbles: true })))
                                                                                             } else {
@@ -307,71 +268,157 @@ Unit 3: Advanced Calculus"
                                        )}
                                     </div>
                                     
-                                    <FormField
-                                        control={form.control}
-                                        name="testDate"
-                                        render={({ field }) => (
-                                            <FormItem className="flex flex-col items-center">
-                                            <FormLabel className="mb-2 text-left w-full font-semibold">When is your test date? (Optional)</FormLabel>
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                <FormControl>
-                                                    <Button
-                                                    variant={"outline"}
-                                                    className={cn(
-                                                        "w-full pl-3 text-left font-normal h-12 text-base bg-[#F9FAFB]",
-                                                        !field.value && "text-muted-foreground"
-                                                    )}
-                                                    >
-                                                    {field.value ? (
-                                                        format(field.value, "PPP")
-                                                    ) : (
-                                                        <span>Pick a date</span>
-                                                    )}
-                                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                                    </Button>
-                                                </FormControl>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0" align="center">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={field.value}
-                                                    onSelect={field.onChange}
-                                                    disabled={(date) =>
-                                                    date < new Date(new Date().setDate(new Date().getDate() - 1))
-                                                    }
-                                                    initialFocus
-                                                />
-                                                </PopoverContent>
-                                            </Popover>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
+                                    {selectedExamType && (
+                                        <>
+                                        {/* Date and Study Days */}
+                                        <div className="grid md:grid-cols-2 gap-8 items-start">
+                                            <FormField
+                                                control={form.control}
+                                                name="testDate"
+                                                render={({ field }) => (
+                                                    <FormItem className="flex flex-col items-center">
+                                                    <FormLabel className="mb-2 text-left w-full font-semibold text-lg">2. When is your test?</FormLabel>
+                                                    <Popover>
+                                                        <PopoverTrigger asChild>
+                                                        <FormControl>
+                                                            <Button
+                                                            variant={"outline"}
+                                                            className={cn(
+                                                                "w-full pl-3 text-left font-normal h-12 text-base bg-[#F9FAFB]",
+                                                                !field.value && "text-muted-foreground"
+                                                            )}
+                                                            >
+                                                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                                            </Button>
+                                                        </FormControl>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-auto p-0" align="center">
+                                                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} disabled={(date) => date < new Date(new Date().setDate(new Date().getDate()))} initialFocus />
+                                                        </PopoverContent>
+                                                    </Popover>
+                                                    <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                             <FormField
+                                                control={form.control}
+                                                name="availableStudyDays"
+                                                render={() => (
+                                                    <FormItem>
+                                                        <div className="mb-4">
+                                                            <FormLabel className="font-semibold text-lg">3. Your study days?</FormLabel>
+                                                        </div>
+                                                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                                                        {DAYS_OF_WEEK.map((day) => (
+                                                            <FormField
+                                                                key={day}
+                                                                control={form.control}
+                                                                name="availableStudyDays"
+                                                                render={({ field }) => {
+                                                                    return (
+                                                                    <FormItem key={day} className="flex flex-row items-start space-x-2 space-y-0">
+                                                                        <FormControl>
+                                                                            <Checkbox
+                                                                                checked={field.value?.includes(day)}
+                                                                                onCheckedChange={(checked) => {
+                                                                                    return checked
+                                                                                        ? field.onChange([...field.value, day])
+                                                                                        : field.onChange( field.value?.filter( (value) => value !== day ) )
+                                                                                }}
+                                                                            />
+                                                                        </FormControl>
+                                                                        <FormLabel className="font-normal">{day.substring(0,3)}</FormLabel>
+                                                                    </FormItem>
+                                                                    )
+                                                                }}
+                                                            />
+                                                        ))}
+                                                        </div>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                        
+                                        {/* Topics Section */}
+                                        <div>
+                                            <FormLabel className="font-semibold text-lg text-left w-full mb-2 block">4. What topics do you want to study?</FormLabel>
+                                            <Card className="bg-muted/50 p-4 space-y-4">
+                                                {fields.map((field, index) => (
+                                                    <div key={field.id} className="flex items-center gap-2 bg-background p-2 rounded-md">
+                                                        <Controller
+                                                            name={`topics.${index}.topic`}
+                                                            control={form.control}
+                                                            render={({ field: controllerField }) => (
+                                                                 <Popover>
+                                                                    <PopoverTrigger asChild>
+                                                                        <Button variant="outline" className="w-full justify-between font-normal">
+                                                                            {controllerField.value || "Select a Topic"}
+                                                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                                        </Button>
+                                                                    </PopoverTrigger>
+                                                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                                        <Command>
+                                                                            <CommandInput placeholder="Search topic..." />
+                                                                            <CommandEmpty>No topic found.</CommandEmpty>
+                                                                            <CommandList>
+                                                                               <ScrollArea className="h-72">
+                                                                                {syllabusTopics.map((topic) => (
+                                                                                <CommandItem
+                                                                                    key={topic}
+                                                                                    onSelect={() => {
+                                                                                        form.setValue(`topics.${index}.topic`, topic);
+                                                                                        const popoverTrigger = document.querySelector(`[aria-controls^="radix-popover-content-"][data-state="open"]`);
+                                                                                        popoverTrigger?.dispatchEvent(new Event('click', { bubbles: true }))
+                                                                                    }}
+                                                                                >
+                                                                                    <Check className={cn("mr-2 h-4 w-4", topic === controllerField.value ? "opacity-100" : "opacity-0")} />
+                                                                                    {topic}
+                                                                                </CommandItem>
+                                                                                ))}
+                                                                                </ScrollArea>
+                                                                            </CommandList>
+                                                                        </Command>
+                                                                    </PopoverContent>
+                                                                </Popover>
+                                                            )}
+                                                        />
+                                                        
+                                                        <Controller
+                                                            name={`topics.${index}.difficulty`}
+                                                            control={form.control}
+                                                            defaultValue="Easy"
+                                                            render={({ field: controllerField }) => (
+                                                                <Select onValueChange={controllerField.onChange} defaultValue={controllerField.value}>
+                                                                    <SelectTrigger className="w-[120px]">
+                                                                        <SelectValue placeholder="Difficulty" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="Easy">Easy</SelectItem>
+                                                                        <SelectItem value="Hard">Hard</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            )}
+                                                        />
 
-                                    <FormField
-                                        control={form.control}
-                                        name="customInstructions"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                            <FormLabel className="font-semibold">Custom Instructions (Optional)</FormLabel>
-                                            <FormControl>
-                                                <Textarea
-                                                placeholder="e.g., 'Focus only on the Math section' or 'Find harder practice questions for Organic Chemistry'"
-                                                className="min-h-[100px] bg-[#F9FAFB] focus:bg-white"
-                                                {...field}
-                                                />
-                                            </FormControl>
-                                            <FormDescription className="leading-relaxed">
-                                                Tell the AI your specific goals or what to focus on.
-                                            </FormDescription>
-                                            <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
+                                                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                                <Button type="button" variant="outline" className="w-full" onClick={() => append({ topic: '', difficulty: 'Easy' })}>
+                                                    <PlusCircle className="mr-2 h-4 w-4"/> Add Topic
+                                                </Button>
+                                            </Card>
+                                             <FormMessage>{form.formState.errors.topics?.message || form.formState.errors.topics?.root?.message}</FormMessage>
+                                        </div>
+                                        </>
+                                    )}
+
 
                                     <Button type="submit" size="lg" className="w-full h-12 text-lg font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl shadow-primary/30" disabled={isButtonDisabled}>
-                                        {isLoading ? 'Submitting...' : 'Submit'}
+                                        {isLoading ? 'Generating Plan...' : 'Generate My Plan'}
                                     </Button>
                                 </form>
                             </Form>

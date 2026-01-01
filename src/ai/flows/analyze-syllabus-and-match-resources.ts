@@ -2,7 +2,7 @@
 'use server';
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import { WeeklyStudyPathModuleSchema } from '@/ai/schemas/study-path';
 import syllabusData from '@/lib/syllabusData.json';
 
@@ -125,7 +125,7 @@ export async function analyzeSyllabusAndMatchResources(
 
     return structuredOutput;
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in analyzeSyllabusAndMatchResources flow:", error);
     if (error instanceof Error && (error.message.includes('DEADLINE_EXCEEDED') || error.message.includes('timeout'))) {
         return fallbackResult;

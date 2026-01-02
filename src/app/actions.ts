@@ -2,7 +2,6 @@
 
 import { generateStudyPlan } from '@/ai/flows/generate-study-plan-flow';
 import { format } from 'date-fns';
-// REMOVED: addDoc, collection, etc. (Not needed for Admin SDK)
 import { db } from '@/lib/firebaseAdmin'; 
 
 type TopicInput = {
@@ -26,9 +25,6 @@ type ActionResult = {
   planId?: string;
 };
 
-/**
- * Generates and saves a study plan to Firestore.
- */
 export async function generateAndSaveStudyPlanAction(input: ActionInput): Promise<ActionResult> {
   const { userId, ...planRequest } = input;
 
@@ -37,7 +33,6 @@ export async function generateAndSaveStudyPlanAction(input: ActionInput): Promis
   }
 
   try {
-    // 1. Call the AI flow to generate the study plan
     const aiResponse = await generateStudyPlan({
       ...planRequest,
       testDate: format(planRequest.testDate, 'yyyy-MM-dd'),
@@ -47,7 +42,6 @@ export async function generateAndSaveStudyPlanAction(input: ActionInput): Promis
       throw new Error('AI failed to generate a study plan.');
     }
 
-    // 2. Structure the data for Firestore
     const newPlan = {
       userId: userId,
       request: planRequest,
@@ -55,7 +49,6 @@ export async function generateAndSaveStudyPlanAction(input: ActionInput): Promis
       createdAt: new Date(),
     };
 
-    // 3. Save to Firestore (FIXED SYNTAX FOR ADMIN SDK)
     const planRef = await db.collection('users').doc(userId).collection('studyPlans').add(newPlan);
 
     return { success: true, planId: planRef.id, data: aiResponse.studyPlan };
@@ -65,9 +58,6 @@ export async function generateAndSaveStudyPlanAction(input: ActionInput): Promis
   }
 }
 
-/**
- * Retrieves the list of study plans (FIXED SYNTAX FOR ADMIN SDK)
- */
 export async function getStudyPlansAction(userId: string): Promise<ActionResult> {
   if (!userId) {
     return { success: false, error: 'User not authenticated.' };

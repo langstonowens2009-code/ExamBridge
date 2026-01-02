@@ -66,7 +66,15 @@ type GroupedSyllabusTopic = {
     topics: string[];
 }
 
-const DAYS_OF_WEEK = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const DAYS_OF_WEEK = [
+    { fullName: "Sunday", abbr: "Sun" },
+    { fullName: "Monday", abbr: "Mon" },
+    { fullName: "Tuesday", abbr: "Tue" },
+    { fullName: "Wednesday", abbr: "Wed" },
+    { fullName: "Thursday", abbr: "Thu" },
+    { fullName: "Friday", abbr: "Fri" },
+    { fullName: "Saturday", abbr: "Sat" },
+];
 
 
 interface MainPageProps {
@@ -307,21 +315,21 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
                                                     render={() => (
                                                         <FormItem>
                                                             <FormLabel>Weekly Study Days</FormLabel>
-                                                            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                                                            <div className="grid grid-cols-4 gap-2">
                                                             {DAYS_OF_WEEK.map((day) => (
                                                                 <FormField
-                                                                    key={day}
+                                                                    key={day.fullName}
                                                                     control={form.control}
                                                                     name="availableStudyDays"
                                                                     render={({ field }) => (
-                                                                        <FormItem key={day} className="flex flex-row items-center space-x-2 space-y-0 p-2 rounded-md hover:bg-muted transition-colors">
+                                                                        <FormItem key={day.fullName} className="flex flex-row items-center space-x-2 space-y-0 p-2 rounded-md hover:bg-muted transition-colors">
                                                                             <FormControl>
-                                                                                <Checkbox checked={field.value?.includes(day)}
+                                                                                <Checkbox checked={field.value?.includes(day.fullName)}
                                                                                     onCheckedChange={(checked) => {
-                                                                                        return checked ? field.onChange([...field.value, day]) : field.onChange(field.value?.filter((value) => value !== day))
+                                                                                        return checked ? field.onChange([...field.value, day.fullName]) : field.onChange(field.value?.filter((value) => value !== day.fullName))
                                                                                     }}/>
                                                                             </FormControl>
-                                                                            <FormLabel className="font-normal">{day}</FormLabel>
+                                                                            <FormLabel className="font-normal">{day.abbr}</FormLabel>
                                                                         </FormItem>
                                                                     )}
                                                                 />

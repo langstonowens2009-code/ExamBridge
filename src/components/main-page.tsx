@@ -38,7 +38,7 @@ import type { WeeklyStudyPath } from '@/ai/schemas/study-path';
 // Zod schema for a single topic
 const topicSchema = z.object({
   topic: z.string().min(1, 'Topic name is required.'),
-  difficulty: z.enum(['Easy', 'Medium', 'Hard']),
+  difficulty: z.enum(['Easy', 'Medium', 'Hard'], { required_error: 'Please select a difficulty.' }),
 });
 
 // Main form schema
@@ -423,11 +423,10 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
                                                         <Controller
                                                             name={`topics.${index}.difficulty`}
                                                             control={form.control}
-                                                            defaultValue="Easy"
                                                             render={({ field: controllerField }) => (
-                                                                <Select onValueChange={controllerField.onChange} defaultValue={controllerField.value}>
-                                                                    <SelectTrigger className="w-[120px] bg-background">
-                                                                        <SelectValue placeholder="Difficulty" />
+                                                                <Select onValueChange={controllerField.onChange} value={controllerField.value}>
+                                                                    <SelectTrigger className="w-[150px] bg-background">
+                                                                        <SelectValue placeholder="Select difficulty" />
                                                                     </SelectTrigger>
                                                                     <SelectContent>
                                                                         <SelectItem value="Easy">Easy</SelectItem>
@@ -443,7 +442,7 @@ export function MainPage({ openAccordionValue, onAccordionValueChange }: MainPag
                                                         </Button>
                                                     </div>
                                                 ))}
-                                                <Button type="button" variant="outline" className="w-full mt-2" onClick={() => append({ topic: '', difficulty: 'Easy' })}>
+                                                <Button type="button" variant="outline" className="w-full mt-2" onClick={() => append({ topic: '' } as any)}>
                                                     <PlusCircle className="mr-2 h-4 w-4"/> Add Topic
                                                 </Button>
                                             <FormMessage className="mt-2">{form.formState.errors.topics?.message || form.formState.errors.topics?.root?.message}</FormMessage>

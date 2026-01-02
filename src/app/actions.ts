@@ -2,8 +2,8 @@
 
 import { generateStudyPlan } from '@/ai/flows/generate-study-plan-flow';
 import { format } from 'date-fns';
-import { addDoc, collection, getDocs, query, where } from 'firebase/firestore';
-import { firestore } from '@/firebase/config'; // Assuming you have a Firestore instance exported
+// REMOVED: addDoc, collection, etc. (Not needed for Admin SDK)
+import { db } from '@/lib/firebaseAdmin'; 
 
 type TopicInput = {
   topic: string;
@@ -51,12 +51,12 @@ export async function generateAndSaveStudyPlanAction(input: ActionInput): Promis
     const newPlan = {
       userId: userId,
       request: planRequest,
-      response: aiResponse.studyPlan, // The structured JSON from the AI
+      response: aiResponse.studyPlan,
       createdAt: new Date(),
     };
 
-    // 3. Save the new study plan to Firestore
-    const planRef = await addDoc(collection(firestore, 'users', userId, 'studyPlans'), newPlan);
+    // 3. Save to Firestore (FIXED SYNTAX FOR ADMIN SDK)
+    const planRef = await db.collection('users').doc(userId).collection('studyPlans').add(newPlan);
 
     return { success: true, planId: planRef.id, data: aiResponse.studyPlan };
   } catch (error: any) {
@@ -66,7 +66,7 @@ export async function generateAndSaveStudyPlanAction(input: ActionInput): Promis
 }
 
 /**
- * Retrieves the list of study plans for the user's dashboard.
+ * Retrieves the list of study plans (FIXED SYNTAX FOR ADMIN SDK)
  */
 export async function getStudyPlansAction(userId: string): Promise<ActionResult> {
   if (!userId) {
@@ -74,9 +74,10 @@ export async function getStudyPlansAction(userId: string): Promise<ActionResult>
   }
 
   try {
-    const plansRef = collection(firestore, 'users', userId, 'studyPlans');
-    const q = query(plansRef, where('userId', '==', userId));
-    const querySnapshot = await getDocs(q);
+    const querySnapshot = await db.collection('users').doc(userId).collection('studyPlans')
+      .where('userId', '==', userId)
+      .get();
+      
     const plans = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
     return { success: true, data: plans };

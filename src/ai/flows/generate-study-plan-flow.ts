@@ -1,11 +1,4 @@
 'use server';
-/**
- * @fileOverview A flow that generates a personalized study plan based on user inputs.
- *
- * - generateStudyPlan - A function that takes user preferences and generates a structured study plan.
- * - GenerateStudyPlanInputSchema - The Zod schema for the input of the generation flow.
- * - GenerateStudyPlanOutputSchema - The Zod schema for the output of the generation flow.
- */
 
 import { ai } from '@/ai/genkit';
 import {
@@ -15,14 +8,9 @@ import {
   type GenerateStudyPlanOutput,
 } from '@/ai/schemas/study-path';
 
-export async function generateStudyPlan(
-  input: GenerateStudyPlanInput
-): Promise<GenerateStudyPlanOutput> {
-  return generateStudyPlanFlow(input);
-}
-
 const prompt = ai.definePrompt({
   name: 'generateStudyPlanPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: { schema: GenerateStudyPlanInputSchema },
   output: { schema: GenerateStudyPlanOutputSchema },
   prompt: `You are an expert educational planner. A student needs a personalized study plan for the '{{examType}}' exam.
@@ -57,3 +45,9 @@ const generateStudyPlanFlow = ai.defineFlow(
     return output!;
   }
 );
+
+export async function generateStudyPlan(
+  input: GenerateStudyPlanInput
+): Promise<GenerateStudyPlanOutput> {
+  return generateStudyPlanFlow(input);
+}

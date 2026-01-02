@@ -1,56 +1,79 @@
-
-import * as admin from 'firebase-admin';
+/**
+ * This script is for one-time, manual seeding of the 'resources' collection in Firestore.
+ * It is intended to be run from your local machine's terminal, not as part of the app's deployment.
+ *
+ * How to run:
+ * 1. Make sure you are logged into the gcloud CLI.
+ * 2. Authenticate for Application Default Credentials by running:
+ *    `gcloud auth application-default login`
+ * 3. Set your project ID with gcloud:
+ *    `gcloud config set project studio-2413639035-7ed5f`
+ * 4. Run the script from the root of your project:
+ *    `node scripts/manual-seed.mjs`
+ *    OR, more simply, use the package.json script:
+ *    `npm run seed:db`
+ */
+import { initializeApp, cert } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 import { readFile } from 'fs/promises';
 
-// Use ADC by only providing the projectId. The environment handles auth.
+// --- Configuration ---
+const PROJECT_ID = 'studio-2413639035-7ed5f';
+const RESOURCES_FILE_PATH = 'src/lib/resourcesData.json';
+const TARGET_COLLECTION = 'resources';
+// --- End Configuration ---
+
+
+// Initialize Firebase Admin SDK.
+// When running locally with ADC, you don't need to pass any credentials.
+// The SDK will automatically find them.
 try {
-  admin.initializeApp({
-    projectId: 'exambridge-34136'
+  initializeApp({
+    projectId: PROJECT_ID,
   });
-  console.log('Firebase Admin SDK initialized with project: exambridge-34136');
+  console.log('Firebase Admin SDK initialized successfully.');
 } catch (error) {
-  if (error.code !== 'app/duplicate-app') {
-    throw error;
-  }
-  console.log('Firebase Admin SDK already initialized.');
+  console.error('Error initializing Firebase Admin SDK:', error);
+  process.exit(1);
 }
 
-
-const db = admin.firestore();
-
-// Helper function to introduce a delay
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const db = getFirestore();
 
 async function seedDatabase() {
   try {
-    console.log('Reading resourcesData.json...');
-    const resourcesPath = new URL('../src/lib/resourcesData.json', import.meta.url);
-    const resourcesData = JSON.parse(await readFile(resourcesPath, 'utf8'));
-    const resources = resourcesData.resources;
+    console.log(`Reading resources from ${RESOURCES_FILE_PATH}...`);
+    const fileContent = await readFile(new URL(`../${RESOURCES_FILE_PATH}`, import.meta.url), 'utf-8');
+    const { resources } = JSON.parse(fileContent);
 
     if (!resources || resources.length === 0) {
-      console.log('No resources found in the JSON file. Exiting.');
+      console.error('No resources found in the JSON file. Aborting.');
       return;
     }
 
-    console.log(`Found ${resources.length} resources. Starting upload to Firestore...`);
+    console.log(`Found ${resources.length} resources to seed.`);
 
-    let count = 0;
-    for (const resource of resources) {
-      if (!resource.id) {
-        console.warn('Skipping resource with no id:', resource);
-        continue;
-      }
-      const resourceRef = db.collection('resources').doc(resource.id);
-      await resourceRef.set(resource);
-      count++;
-      console.log(`- Uploaded: ${resource.id}`);
-      await sleep(50); // Add a 50ms delay to avoid hitting rate limits
-    }
+    // Create a new batch
+    const batch = db.batch();
 
-    console.log(`\n✅ Successfully uploaded ${count} resources to Firestore!`);
+    const resourcesCollection = db.collection(TARGET_COLLECTION);
+    
+    resources.forEach((resource) => {
+      // Use the 'id' from the JSON as the document ID to prevent duplicates on re-runs.
+      const docRef = resourcesCollection.doc(resource.id);
+      batch.set(docRef, resource);
+    });
+
+    console.log('Committing batch to Firestore...');
+    await batch.commit();
+
+    console.log('----------------------------------------------------');
+    console.log('✅ Success! Database has been seeded.');
+    console.log(`✅ ${resources.length} documents written to the '${TARGET_COLLECTION}' collection.`);
+    console.log('----------------------------------------------------');
+
   } catch (error) {
     console.error('❌ Error seeding database:', error);
+    process.exit(1);
   }
 }
 

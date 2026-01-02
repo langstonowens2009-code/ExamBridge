@@ -1,6 +1,8 @@
 'use server';
 
-import { ai, gemini15FlashModel } from '@/ai/genkit';
+import { ai } from '@/ai/genkit';
+// Ensure gemini15Flash is imported from the correct plugin package
+import { gemini15Flash } from '@genkit-ai/googleai'; 
 import {
   GenerateStudyPlanInputSchema,
   GenerateStudyPlanOutputSchema,
@@ -10,7 +12,8 @@ import {
 
 const prompt = ai.definePrompt({
   name: 'generateStudyPlanPrompt',
-  model: gemini15FlashModel,
+  // You can keep it here, but the call inside the flow is what fixes the crash
+  model: gemini15Flash, 
   input: { schema: GenerateStudyPlanInputSchema },
   output: { schema: GenerateStudyPlanOutputSchema },
   prompt: `You are an expert educational planner. A student needs a personalized study plan for the '{{examType}}' exam.
@@ -41,7 +44,8 @@ const generateStudyPlanFlow = ai.defineFlow(
     outputSchema: GenerateStudyPlanOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
+    // Explicitly passing the model here is the recommended robust fix
+    const { output } = await prompt(input, { model: gemini15Flash }); 
     return output!;
   }
 );

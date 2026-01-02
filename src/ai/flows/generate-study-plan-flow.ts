@@ -10,7 +10,7 @@ import {
 
 const prompt = ai.definePrompt({
   name: 'generateStudyPlanPrompt',
-  model: 'googleai/gemini-1.5-flash',
+  model: 'googleai/gemini-1.5-flash-latest',
   input: { schema: GenerateStudyPlanInputSchema },
   output: { schema: GenerateStudyPlanOutputSchema },
   prompt: `You are an expert educational planner. A student needs a personalized study plan for the '{{examType}}' exam.

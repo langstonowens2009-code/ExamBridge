@@ -1,7 +1,6 @@
 'use server';
 
 import { ai } from '@/ai/genkit';
-// 1. IMPORT the specific model variable from the plugin
 import { gemini15Flash } from '@genkit-ai/googleai'; 
 import {
   GenerateStudyPlanInputSchema,
@@ -12,7 +11,6 @@ import {
 
 const prompt = ai.definePrompt({
   name: 'generateStudyPlanPrompt',
-  // 2. USE the variable gemini15Flash instead of the string
   model: gemini15Flash, 
   input: { schema: GenerateStudyPlanInputSchema },
   output: { schema: GenerateStudyPlanOutputSchema },

@@ -3,4 +3,4 @@ runConfig:
 
 env:
   - variable: GOOGLE_GENAI_API_KEY
-    value: AIzaSyBwgONsnyP5krvMHhpfteKgeWGIk7hpPms
+    secret: GOOGLE_GENAI_API_KEY

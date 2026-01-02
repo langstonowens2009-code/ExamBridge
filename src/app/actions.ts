@@ -4,6 +4,7 @@ import { generateStudyPlan } from '@/ai/flows/generate-study-plan-flow';
 import { format } from 'date-fns';
 import { db } from '@/lib/firebaseAdmin'; 
 
+// All types have 'export' removed to satisfy Next.js rules
 type TopicInput = {
   topic: string;
   difficulty: 'Easy' | 'Medium' | 'Hard';
@@ -27,10 +28,7 @@ type ActionResult = {
 
 export async function generateAndSaveStudyPlanAction(input: ActionInput): Promise<ActionResult> {
   const { userId, ...planRequest } = input;
-
-  if (!userId) {
-    return { success: false, error: 'User not authenticated.' };
-  }
+  if (!userId) return { success: false, error: 'User not authenticated.' };
 
   try {
     const aiResponse = await generateStudyPlan({
@@ -38,9 +36,7 @@ export async function generateAndSaveStudyPlanAction(input: ActionInput): Promis
       testDate: format(planRequest.testDate, 'yyyy-MM-dd'),
     });
 
-    if (!aiResponse || !aiResponse.studyPlan) {
-      throw new Error('AI failed to generate a study plan.');
-    }
+    if (!aiResponse || !aiResponse.studyPlan) throw new Error('AI failed to generate plan.');
 
     const newPlan = {
       userId: userId,
@@ -50,29 +46,20 @@ export async function generateAndSaveStudyPlanAction(input: ActionInput): Promis
     };
 
     const planRef = await db.collection('users').doc(userId).collection('studyPlans').add(newPlan);
-
     return { success: true, planId: planRef.id, data: aiResponse.studyPlan };
   } catch (error: any) {
-    console.error('Error in generateAndSaveStudyPlanAction:', error);
-    return { success: false, error: error.message || 'Failed to generate study plan.' };
+    return { success: false, error: error.message || 'Failed to generate plan.' };
   }
 }
 
 export async function getStudyPlansAction(userId: string): Promise<ActionResult> {
-  if (!userId) {
-    return { success: false, error: 'User not authenticated.' };
-  }
-
+  if (!userId) return { success: false, error: 'User not authenticated.' };
   try {
     const querySnapshot = await db.collection('users').doc(userId).collection('studyPlans')
-      .where('userId', '==', userId)
-      .get();
-      
+      .where('userId', '==', userId).get();
     const plans = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
     return { success: true, data: plans };
   } catch (error: any) {
-    console.error('Error fetching study plans:', error);
-    return { success: false, error: 'Failed to retrieve study plans.' };
+    return { success: false, error: 'Failed to retrieve plans.' };
   }
 }

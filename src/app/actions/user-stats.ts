@@ -2,6 +2,7 @@
 
 import { db } from '@/lib/firebaseAdmin';
 
+// ✅ REMOVED 'export' from the type definition
 type ActionResult = {
   success: boolean;
   error?: string;
@@ -10,7 +11,6 @@ type ActionResult = {
 
 /**
  * Seeds a sample userStats document in Firestore for testing purposes.
- * @param userId The ID of the user to seed stats for.
  */
 export async function seedUserStats(userId: string): Promise<ActionResult> {
   if (!userId) {
@@ -24,7 +24,7 @@ export async function seedUserStats(userId: string): Promise<ActionResult> {
     const statsData = {
       weakTopics: ['Right triangles and trigonometry', 'Nonlinear equations'],
       masteryLevel: 'Beginner',
-      testDate: new Date(new Date().setDate(new Date().getDate() + 30)), // 30 days from now
+      testDate: new Date(new Date().setDate(new Date().getDate() + 30)),
     };
 
     await userStatsRef.set(statsData);

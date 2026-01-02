@@ -1,5 +1,6 @@
 runConfig:
   minInstances: 0
+  timeoutSeconds: 300 # Increases wait time to 5 minutes for AI responses
 
 env:
   - variable: GOOGLE_GENAI_API_KEY

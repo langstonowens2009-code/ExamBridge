@@ -7,7 +7,7 @@
  * - ExplainResourceMatchingRationaleOutput - The return type for the explainResourceMatchingRationale function.
  */
 
-import {ai} from '@/ai/genkit';
+import {ai} from '@/ai/init';
 import {
   ExplainResourceMatchingRationaleInputSchema,
   ExplainResourceMatchingRationaleOutputSchema,

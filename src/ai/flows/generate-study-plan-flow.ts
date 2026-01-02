@@ -8,9 +8,13 @@ import {
   type GenerateStudyPlanOutput 
 } from '@/ai/schemas/study-path';
 
-// Using the fully qualified 'gemini-1.5-flash-latest' to resolve 404s on v1beta
+/**
+ * UPDATED JAN 2026:
+ * gemini-2.5-flash is the current stable production model.
+ * gemini-1.5 and "-latest" aliases are retired and return 404s.
+ */
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY!);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 export async function generateStudyPlan(
   input: GenerateStudyPlanInput
@@ -24,19 +28,19 @@ export async function generateStudyPlan(
     const response = await result.response;
     const text = response.text();
     
-    // Extract JSON from AI response
+    // Clean and extract JSON
     const cleanedJson = text.replace(/```json|```/g, "").trim();
     const jsonMatch = cleanedJson.match(/\{[\s\S]*\}/);
     
-    if (!jsonMatch) throw new Error("AI returned invalid JSON format.");
+    if (!jsonMatch) throw new Error("AI failed to return valid JSON format.");
     
     return JSON.parse(jsonMatch[0]) as GenerateStudyPlanOutput;
 
   } catch (error: any) {
-    // Log the full technical error to Cloud Run logs
+    // Logs the full Google error (like 404 or 429) to Cloud Run
     console.error("Detailed AI Error:", error.message || error);
     
-    // Send a clearer message to the user interface
-    throw new Error(error.message || "AI failed to generate plan.");
+    // Sends the error message to the website interface
+    throw new Error(error.message || "The AI service is currently unavailable.");
   }
 }

@@ -8,46 +8,34 @@ import {
   type GenerateStudyPlanOutput 
 } from '@/ai/schemas/study-path';
 
-// Using a specific version string often resolves the 404 errors found in v1beta
+// 1. Using the auto-updated stable alias 'gemini-2.0-flash' to prevent 404 errors
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY!);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-002" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
 export async function generateStudyPlan(
   input: GenerateStudyPlanInput
 ): Promise<GenerateStudyPlanOutput> {
   try {
-    // 1. Construct the tailored prompt
-    const prompt = `You are an expert educational planner. Create a detailed week-by-week study plan for the '${input.examType}' exam.
-    
-    Student Profile:
-    - Topics to cover: ${input.topics.map(t => `${t.topic} (Difficulty: ${t.difficulty})`).join(', ')}
-    - Test Date: ${input.testDate}
-    - Study Schedule: Available on ${input.availableStudyDays.join(', ')}
-    - Daily Commitment: ${input.minutesPerDay} minutes per session.
+    const prompt = `You are an expert educational planner. Create a detailed study plan for: ${input.examType}.
+    Topics: ${input.topics.map(t => `${t.topic} (Difficulty: ${t.difficulty})`).join(', ')}
+    Test Date: ${input.testDate}. Available Days: ${input.availableStudyDays.join(', ')}.
+    Return ONLY a valid JSON object matching this schema: ${JSON.stringify(GenerateStudyPlanOutputSchema)}`;
 
-    Requirement: Prioritize harder topics and group related concepts logically. 
-    Return ONLY a valid JSON object strictly following this structure: ${JSON.stringify(GenerateStudyPlanOutputSchema)}`;
-
-    // 2. Call Gemini directly
+    // 2. Direct call to the new stable model
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
     
-    // 3. Clean and parse the response (Handling potential Markdown backticks)
+    // 3. Robust JSON cleaning
     const cleanedJson = text.replace(/```json|```/g, "").trim();
     const jsonMatch = cleanedJson.match(/\{[\s\S]*\}/);
     
-    if (!jsonMatch) {
-      console.error("Raw AI Response:", text);
-      throw new Error("AI failed to return structured data.");
-    }
+    if (!jsonMatch) throw new Error("AI failed to return structured data.");
     
-    const parsedOutput = JSON.parse(jsonMatch[0]) as GenerateStudyPlanOutput;
-    
-    return parsedOutput;
+    return JSON.parse(jsonMatch[0]) as GenerateStudyPlanOutput;
 
   } catch (error) {
     console.error("Direct SDK Generation Error:", error);
-    throw new Error("The AI was unable to generate your plan. Please try again in a moment.");
+    throw new Error("Generation failed. Please try again.");
   }
 }

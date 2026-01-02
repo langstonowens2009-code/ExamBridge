@@ -1,7 +1,14 @@
+# Settings for the Cloud Run service that powers your app
 runConfig:
-  minInstances: 0
-  timeoutSeconds: 300 # Increases wait time to 5 minutes for AI responses
+  cpu: 1
+  memoryMiB: 1024
 
+# Environment variables and secrets
 env:
+  # Secret for Next.js Server Actions security (fixes "Failed to find Server Action")
+  - variable: NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+    secret: NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+  
+  # Secret for your Google Gemini AI key
   - variable: GOOGLE_GENAI_API_KEY
     secret: GOOGLE_GENAI_API_KEY

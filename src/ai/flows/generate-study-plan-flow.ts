@@ -8,23 +8,27 @@ import {
   type GenerateStudyPlanOutput 
 } from '@/ai/schemas/study-path';
 
-// Use the latest active model to resolve the 404 error
+// Use a persistent model identifier to avoid 404/Not Found errors
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY!);
-const model = genAI.getGenerativeModel({ model: "gemini-3-flash" }); // Updated to latest active model
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-002" });
 
+/**
+ * EXPLICIT EXPORT: Named exports are more stable for Next.js Server Actions 
+ * than wildcard or default exports, helping prevent "Failed to find" errors.
+ */
 export async function generateStudyPlan(
   input: GenerateStudyPlanInput
 ): Promise<GenerateStudyPlanOutput> {
   try {
-    const prompt = `You are an expert educational planner. Create a detailed study plan for: ${input.examType}.
-    Topics: ${input.topics.map(t => `${t.topic} (Difficulty: ${t.difficulty})`).join(', ')}
-    Test Date: ${input.testDate}. Available Days: ${input.availableStudyDays.join(', ')}.
-    Return ONLY a valid JSON object matching this schema: ${JSON.stringify(GenerateStudyPlanOutputSchema)}`;
+    const prompt = `You are an expert educational planner. Create a study plan for: ${input.examType}.
+    Topics: ${input.topics.map(t => `${t.topic}`).join(', ')}.
+    Return ONLY valid JSON matching this structure: ${JSON.stringify(GenerateStudyPlanOutputSchema)}`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
     
+    // Robust cleaning to handle potential markdown backticks
     const cleanedJson = text.replace(/```json|```/g, "").trim();
     const jsonMatch = cleanedJson.match(/\{[\s\S]*\}/);
     
@@ -33,7 +37,7 @@ export async function generateStudyPlan(
     return JSON.parse(jsonMatch[0]) as GenerateStudyPlanOutput;
 
   } catch (error) {
-    console.error("Direct SDK Generation Error:", error);
-    throw new Error("The AI was unable to generate your plan. Please try again in a moment.");
+    console.error("Server Action Error:", error);
+    throw new Error("The AI was unable to generate your plan. Please try again.");
   }
 }

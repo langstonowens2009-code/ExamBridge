@@ -48,7 +48,7 @@ export default function Home() {
                             <CardTitle>Intelligence by Gemini</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-muted-foreground">ExamBridge uses Google's latest Gemini 1.5 Flash model to analyze your specific exam date and topic list.</p>
+                            <p className="text-sm text-muted-foreground">ExamBridge uses Google's latest Gemini 1.5 Flash model to analyze your specific exam date and topic list.</p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -57,7 +57,7 @@ export default function Home() {
                             <CardTitle>Dynamic Planning</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-muted-foreground">Unlike static schedules, our AI calculates study priority based on the difficulty levels you provide, ensuring you spend time where it matters most.</p>
+                            <p className="text-sm text-muted-foreground">Unlike static schedules, our AI calculates study priority based on the difficulty levels you provide, ensuring you spend time where it matters most.</p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -66,7 +66,7 @@ export default function Home() {
                             <CardTitle>Curated Expertise</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-muted-foreground">The AI acts as a digital counselor, pulling from its vast knowledge of trusted educational frameworks like the College Board and Khan Academy to suggest the best free resources available.</p>
+                            <p className="text-sm text-muted-foreground">The AI acts as a digital counselor, pulling from its vast knowledge of trusted educational frameworks like the College Board and Khan Academy to suggest the best free resources available.</p>
                         </CardContent>
                     </Card>
                 </div>

@@ -8,15 +8,15 @@ import {
   type GenerateStudyPlanOutput 
 } from '@/ai/schemas/study-path';
 
-// Initialize the Direct SDK using the secret you just configured in apphosting.yaml
+// Using a specific version string often resolves the 404 errors found in v1beta
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY!);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-002" });
 
 export async function generateStudyPlan(
   input: GenerateStudyPlanInput
 ): Promise<GenerateStudyPlanOutput> {
   try {
-    // 1. Construct the tailored prompt using user inputs
+    // 1. Construct the tailored prompt
     const prompt = `You are an expert educational planner. Create a detailed week-by-week study plan for the '${input.examType}' exam.
     
     Student Profile:
@@ -28,18 +28,22 @@ export async function generateStudyPlan(
     Requirement: Prioritize harder topics and group related concepts logically. 
     Return ONLY a valid JSON object strictly following this structure: ${JSON.stringify(GenerateStudyPlanOutputSchema)}`;
 
-    // 2. Call Gemini directly (Bypasses all Genkit 'missing model' errors)
+    // 2. Call Gemini directly
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
     
-    // 3. Clean and parse the response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error("AI failed to return structured data.");
+    // 3. Clean and parse the response (Handling potential Markdown backticks)
+    const cleanedJson = text.replace(/```json|```/g, "").trim();
+    const jsonMatch = cleanedJson.match(/\{[\s\S]*\}/);
+    
+    if (!jsonMatch) {
+      console.error("Raw AI Response:", text);
+      throw new Error("AI failed to return structured data.");
+    }
     
     const parsedOutput = JSON.parse(jsonMatch[0]) as GenerateStudyPlanOutput;
     
-    // 4. Return the nuanced, tailored plan
     return parsedOutput;
 
   } catch (error) {

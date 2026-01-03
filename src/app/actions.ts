@@ -63,3 +63,31 @@ export async function getStudyPlansAction(userId: string): Promise<ActionResult>
     return { success: false, error: 'Failed to retrieve plans.' };
   }
 }
+export async function getStudyPlanByIdAction(planId: string): Promise<ActionResult> {
+  try {
+    // This performs a collection group query to find the plan ID across all user sub-collections
+    const querySnapshot = await db.collectionGroup('studyPlans')
+      .where('__name__', '==', planId)
+      .limit(1)
+      .get();
+
+    if (querySnapshot.empty) {
+      return { success: false, error: "Study plan not found." };
+    }
+
+    const doc = querySnapshot.docs[0];
+    const data = doc.data();
+
+    return { 
+      success: true, 
+      data: {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate?.() || new Date().toISOString()
+      } 
+    };
+  } catch (error: any) {
+    console.error("Fetch Plan Error:", error);
+    return { success: false, error: "Failed to retrieve the study plan." };
+  }
+}

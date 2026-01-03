@@ -8,35 +8,38 @@ import {
   type GenerateStudyPlanOutput 
 } from '@/ai/schemas/study-path';
 
-// Using 'gemini-flash-latest' which is the current verified alias for the v1beta endpoint
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY!);
-const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+// Using the 2.0 stable model to avoid 1.5-flash retirement errors
+const model = genAI.getGenerativeModel({ 
+  model: "gemini-2.0-flash",
+  generationConfig: { responseMimeType: "application/json" } // Forces JSON output
+});
 
 export async function generateStudyPlan(
   input: GenerateStudyPlanInput
 ): Promise<GenerateStudyPlanOutput> {
   try {
-    const prompt = `You are an expert educational planner. Create a study plan for: ${input.examType}.
-    Topics: ${input.topics.map(t => `${t.topic}`).join(', ')}.
-    Return ONLY valid JSON matching this structure: ${JSON.stringify(GenerateStudyPlanOutputSchema)}`;
+    const prompt = `Create a study plan for: ${input.examType}.
+    Topics: ${input.topics.map(t => t.topic).join(', ')}.
+    Return ONLY a JSON object matching this schema: ${JSON.stringify(GenerateStudyPlanOutputSchema)}`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
     
-    // Clean and extract JSON
-    const cleanedJson = text.replace(/```json|```/g, "").trim();
-    const jsonMatch = cleanedJson.match(/\{[\s\S]*\}/);
-    
-    if (!jsonMatch) throw new Error("AI failed to return valid JSON format.");
-    
-    return JSON.parse(jsonMatch[0]) as GenerateStudyPlanOutput;
+    // Log the actual text for your Cloud Run dashboard
+    console.log("DEBUG_AI_TEXT:", text);
+
+    if (!text) throw new Error("AI returned nothing.");
+
+    // Parse the JSON directly since we forced MIME type
+    return JSON.parse(text) as GenerateStudyPlanOutput;
 
   } catch (error: any) {
-    // This logs the full technical error to your Cloud Run dashboard
-    console.error("Detailed AI Error:", error.message || error);
+    // This detailed log will show up in your Firebase logs
+    console.error("DETAILED_AI_ERROR:", error.message || error);
     
-    // This sends the message to your website's UI
-    throw new Error("The AI service is currently unavailable. Please try again.");
+    // This message goes to your website UI
+    throw new Error(error.message || "AI failed to generate plan.");
   }
 }

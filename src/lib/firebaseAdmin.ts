@@ -1,19 +1,19 @@
-import { initializeApp, getApps, getApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import admin from "firebase-admin";
 
-/**
- * Initializes the Firebase Admin SDK safely for Next.js.
- * This pattern prevents "App already exists" errors during development.
- */
-function createFirebaseAdminApp() {
-  if (getApps().length > 0) {
-    return getApp(); // Reuse existing app
+if (!admin.apps.length) {
+  try {
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        clientEmail: process.env.CLIENT_EMAIL,
+        // This looks for PRIVATE_KEY and fixes the newline characters
+        privateKey: process.env.PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      }),
+    });
+    console.log("Firebase Admin initialized successfully");
+  } catch (error) {
+    console.error("Firebase Admin initialization error:", error);
   }
-
-  // On Firebase App Hosting, this picks up "Application Default Credentials"
-  // automatically without needing a JSON key file.
-  return initializeApp(); 
 }
 
-const adminApp = createFirebaseAdminApp();
-export const db = getFirestore(adminApp);
+export const db = admin.firestore();

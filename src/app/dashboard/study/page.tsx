@@ -4,7 +4,8 @@ import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 // Corrected capitalized import
-import { generateStudySessionAction } from '@/app/actions/generateStudySession';import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { generateStudySessionAction } from '@/app/actions/generateStudySession';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, BookText, HelpCircle, CheckCircle, XCircle } from 'lucide-react';
 import { Header } from '@/components/header';

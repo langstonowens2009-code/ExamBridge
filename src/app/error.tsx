@@ -1,49 +1,33 @@
-'use server';
+'use client'; // This MUST be the first line
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { 
-  GenerateStudyPlanInputSchema, 
-  GenerateStudyPlanOutputSchema,
-  type GenerateStudyPlanInput,
-  type GenerateStudyPlanOutput 
-} from '@/ai/schemas/study-path';
+import { useEffect } from 'react';
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY!);
-const model = genAI.getGenerativeModel({ 
-  model: "gemini-2.5-flash",
-  generationConfig: { responseMimeType: "application/json" } 
-});
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  useEffect(() => {
+    // Log the error to your browser console for debugging
+    console.error('Next.js Client Exception:', error);
+  }, [error]);
 
-export async function generateStudyPlan(
-  input: GenerateStudyPlanInput
-): Promise<GenerateStudyPlanOutput> {
-  try {
-    const prompt = `Create a study plan for: ${input.examType}.
-    Topics: ${input.topics.map(t => t.topic).join(', ')}.
-    Return ONLY JSON matching this schema: ${JSON.stringify(GenerateStudyPlanOutputSchema)}`;
-
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-
-    // 1. Parse the raw AI response
-    const rawData = JSON.parse(text.trim());
-
-    // 2. SERIALIZATION FIX: 
-    // This deep-clones the object into a "Plain Object" format.
-    // It strips out any hidden Classes or Prototypes that crash Next.js.
-    const cleanData = JSON.parse(JSON.stringify(rawData));
-
-    // 3. Ensure dates are strings if they exist in the schema
-    if (cleanData.testDate && typeof cleanData.testDate !== 'string') {
-      cleanData.testDate = new Date().toISOString(); 
-    }
-
-    return cleanData as GenerateStudyPlanOutput;
-
-  } catch (error: any) {
-    console.error("SERIALIZATION_OR_AI_ERROR:", error.message || error);
-    // Bubble up a plain string error
-    throw new Error("Data processing error: Please try generating again.");
-  }
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-50">
+      <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
+        <h2 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h2>
+        <p className="text-gray-600 mb-6">
+          {error.message || "An unexpected error occurred while processing your study plan."}
+        </p>
+        <button
+          onClick={() => reset()}
+          className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-colors"
+        >
+          Try again
+        </button>
+      </div>
+    </div>
+  );
 }

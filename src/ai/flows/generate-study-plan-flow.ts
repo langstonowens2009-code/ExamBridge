@@ -19,29 +19,29 @@ export async function generateStudyPlan(
   try {
     const prompt = `Create a study plan for: ${input.examType}.
     Topics: ${input.topics.map(t => t.topic).join(', ')}.
-    Structure: { "topic": string, "weeks": [{ "weekNumber": number, "theme": string, "activities": string[] }] }`;
+    Return structure: { "topic": string, "weeks": [{ "weekNumber": number, "theme": string, "activities": string[] }] }`;
 
     const result = await model.generateContent(prompt);
     const text = result.response.text();
 
     const rawData = JSON.parse(text.trim());
-    const planData = rawData.studyPlan ? rawData.studyPlan : rawData;
+    const planData = rawData.studyPlan || rawData;
     
-    // This strips any non-plain object metadata (Zod junk)
-    const cleanPlan = JSON.parse(JSON.stringify(planData));
+    // Deep clone to strip Zod metadata
+    const cleanPlan = JSON.parse(JSON.stringify(planData)) as any;
 
-    // THE FIX: Explicitly cast the properties to remove the red squiggly
-    const output: GenerateStudyPlanOutput = {
-      topic: (cleanPlan.topic as string) || input.examType,
+    // THE SQUIGGLE FIX: Explicitly satisfy the GenerateStudyPlanOutput interface
+    const finalizedOutput: GenerateStudyPlanOutput = {
+      topic: String(cleanPlan.topic || input.examType),
       weeks: Array.isArray(cleanPlan.weeks) 
         ? cleanPlan.weeks 
         : (Array.isArray(cleanPlan.weeklySchedule) ? cleanPlan.weeklySchedule : [])
     };
 
-    return output;
+    return finalizedOutput;
 
   } catch (error: any) {
-    console.error("FINAL_TS_ERROR:", error.message);
+    console.error("DEPLOYMENT_ERROR:", error.message);
     throw new Error("AI generated the plan, but it failed to render.");
   }
 }

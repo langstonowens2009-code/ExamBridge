@@ -2,40 +2,35 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { getStudyPlansAction } from '@/app/actions';
-import { seedResourcesAction } from '@/app/actions/seedResources';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Loader2, BookOpen, PlusCircle, Rocket } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { Loader2, BarChart, ChevronRight } from 'lucide-react';
 import { Header } from '@/components/header';
-import { useToast } from '@/hooks/use-toast';
+import { PerformanceHeader } from '@/components/dashboard/performance-header';
+import { DifficultyChart } from '@/components/dashboard/difficulty-chart';
+import { DomainProgress } from '@/components/dashboard/domain-progress';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { getPerformanceSummaryAction, PerformanceSummary } from '@/app/actions/get-performance-summary';
+
 
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
-  const [plans, setPlans] = useState<any[]>([]);
+  const [performanceData, setPerformanceData] = useState<PerformanceSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const { toast } = useToast();
 
   useEffect(() => {
-    async function fetchPlans() {
+    async function fetchPerformanceData() {
       if (user) {
         try {
-          const result = await getStudyPlansAction(user.uid);
+          const result = await getPerformanceSummaryAction(user.uid);
           if (result.success) {
-            const parsedPlans = result.data.map((plan: any) => ({
-              ...plan,
-              createdAt: new Date(plan.createdAt.seconds * 1000),
-            }));
-            setPlans(parsedPlans);
+            setPerformanceData(result.data as PerformanceSummary);
           } else {
-            setError(result.error || 'Failed to fetch study plans.');
+            setError(result.error || 'Failed to fetch performance data.');
           }
         } catch (e) {
-          setError('An error occurred while fetching your plans.');
+          setError('An error occurred while fetching your performance data.');
         } finally {
           setLoading(false);
         }
@@ -43,17 +38,8 @@ export default function DashboardPage() {
         setLoading(false);
       }
     }
-    fetchPlans();
+    fetchPerformanceData();
   }, [user, authLoading]);
-
-  const handleResourceSync = async () => {
-    setIsSyncing(true);
-    const result = await seedResourcesAction();
-    if (result.success) {
-      toast({ title: 'Sync Complete!', description: 'Resources are now live.' });
-    }
-    setIsSyncing(false);
-  };
 
   if (authLoading || loading) {
     return (
@@ -67,60 +53,40 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-secondary/40">
       <Header />
       <main className="flex-1 container mx-auto py-8 px-4 md:px-6">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Your Study Plans</h1>
-          <Button asChild>
-            <Link href="/">Create New Plan</Link>
-          </Button>
-        </div>
+        <PerformanceHeader examType={performanceData?.examType || 'SAT'} />
 
-        {error && <div className="text-destructive p-4 bg-destructive/10 rounded-md mb-8">{error}</div>}
+        {error && <div className="text-destructive p-4 bg-destructive/10 rounded-md my-8">{error}</div>}
 
-        <Card className="mb-8 bg-secondary/50 border-primary/20">
-          <CardHeader>
-            <CardTitle>Admin Control</CardTitle>
-            <CardDescription>Database management tools.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={handleResourceSync} disabled={isSyncing}>
-              {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Rocket className="mr-2 h-4 w-4"/>}
-              Sync Database
-            </Button>
-          </CardContent>
-        </Card>
-
-        {plans.length === 0 ? (
-          <div className="text-center py-20 border-2 border-dashed rounded-lg">
-            <BookOpen className="h-12 w-12 mx-auto text-muted-foreground" />
-            <h2 className="mt-6 text-2xl font-semibold">No Saved Plans Yet</h2>
+        {!performanceData ? (
+           <div className="text-center py-20 border-2 border-dashed rounded-lg bg-background">
+            <BarChart className="h-12 w-12 mx-auto text-muted-foreground" />
+            <h2 className="mt-6 text-2xl font-semibold">No Performance Data Yet</h2>
+            <p className="mt-2 text-muted-foreground">Your scores will appear here once you submit a mock exam.</p>
             <Button asChild className="mt-6">
-              <Link href="/"><PlusCircle className="mr-2 h-4 w-4"/>Create New Plan</Link>
+              <Link href="/dashboard/mock-exam">Take a Mock Exam <ChevronRight className="ml-2 h-4 w-4"/></Link>
             </Button>
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {plans.map((plan) => (
-              <Card key={plan.id} className="flex flex-col hover:border-primary/50 transition-colors">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-3">
-                    <BookOpen className="h-5 w-5 text-primary" />
-                    <span>{plan.request.examType}</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <CardDescription>
-                    Created {formatDistanceToNow(plan.createdAt, { addSuffix: true })}
-                  </CardDescription>
-                  <Button asChild className="w-full mt-4" variant="outline">
-                    <Link href={`/dashboard/plan/${plan.id}`}>View Study Path</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle>Question Topics & Difficulty</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-3 gap-8">
+                <div className="md:col-span-1">
+                  <h3 className="font-semibold text-lg mb-4 text-center">Difficulty Breakdown</h3>
+                  <DifficultyChart data={performanceData.difficulty} />
+                </div>
+                <div className="md:col-span-2">
+                  <h3 className="font-semibold text-lg mb-4">Domain Performance</h3>
+                  <DomainProgress domains={performanceData.domains} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </main>
     </div>

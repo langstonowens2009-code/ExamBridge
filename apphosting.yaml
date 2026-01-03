@@ -3,7 +3,11 @@ apiVersion: "v1"
 env:
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
     secret: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+  - variable: FIREBASE_CLIENT_EMAIL
+    secret: FIREBASE_CLIENT_EMAIL
   - variable: CLIENT_EMAIL
     secret: FIREBASE_CLIENT_EMAIL
+  - variable: FIREBASE_PRIVATE_KEY
+    secret: FIREBASE_PRIVATE_KEY
   - variable: PRIVATE_KEY
     secret: FIREBASE_PRIVATE_KEY

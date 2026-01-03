@@ -16,32 +16,35 @@ const model = genAI.getGenerativeModel({
 export async function generateStudyPlan(
   input: GenerateStudyPlanInput
 ): Promise<GenerateStudyPlanOutput> {
+  console.log("AI_INPUT_START:", input.examType);
+  
   try {
     const prompt = `Create a study plan for: ${input.examType}.
     Topics: ${input.topics.map(t => t.topic).join(', ')}.
-    IMPORTANT: You MUST use the key "weeks" for the array of study sessions.
-    Return structure: { "topic": string, "weeks": [{ "weekNumber": number, "theme": string, "activities": string[] }] }`;
+    Return ONLY a JSON object with this structure: { "topic": string, "weeks": [...] }`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
 
+    // 1. Parse the AI response
     const rawData = JSON.parse(text.trim());
-    
-    // Extract the inner content if AI wrapped it in "studyPlan"
-    const content = rawData.studyPlan ? rawData.studyPlan : rawData;
 
-    // NAME MATCHING FIX: If AI used 'weeklySchedule', rename it to 'weeks'
-    const finalData = {
-      topic: content.topic || input.examType,
-      weeks: content.weeks || content.weeklySchedule || []
-    };
+    // 2. EXTRACTION: Get just the plan data, skipping Zod wrapper if it exists
+    const planData = rawData.studyPlan ? rawData.studyPlan : rawData;
 
-    // Serialize to plain JSON for Next.js 15
-    return JSON.parse(JSON.stringify(finalData)) as GenerateStudyPlanOutput;
+    // 3. SERIALIZATION FIX: This strips all Zod metadata (_def, ~standard)
+    // and creates a plain object that Next.js 15 can safely pass to the UI.
+    const cleanPlan = JSON.parse(JSON.stringify(planData));
+
+    // 4. MAPPING FIX: Ensure the dashboard sees "weeks" even if AI used "weeklySchedule"
+    return {
+      topic: cleanPlan.topic || input.examType,
+      weeks: cleanPlan.weeks || cleanPlan.weeklySchedule || []
+    } as GenerateStudyPlanOutput;
 
   } catch (error: any) {
-    console.error("DISPLAY_FIX_ERROR:", error.message);
-    throw new Error("AI generated the plan, but it failed to display. Retrying...");
+    console.error("FINAL_PATCH_ERROR:", error.message);
+    throw new Error("AI generated the plan, but it failed to render. Please try again.");
   }
 }

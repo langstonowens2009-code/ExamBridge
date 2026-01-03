@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -25,13 +24,11 @@ export default function DashboardPage() {
     async function fetchPlans() {
       if (user) {
         try {
-          // Pass the user's UID directly to the server action
           const result = await getStudyPlansAction(user.uid);
           if (result.success) {
-            // Parse the ISO string date back to a Date object
             const parsedPlans = result.data.map((plan: any) => ({
               ...plan,
-              createdAt: new Date(plan.createdAt.seconds * 1000), // convert Firestore Timestamp
+              createdAt: new Date(plan.createdAt.seconds * 1000),
             }));
             setPlans(parsedPlans);
           } else {
@@ -43,7 +40,6 @@ export default function DashboardPage() {
           setLoading(false);
         }
       } else if (!authLoading) {
-        // If user is not logged in and auth is not loading, stop loading.
         setLoading(false);
       }
     }
@@ -54,16 +50,7 @@ export default function DashboardPage() {
     setIsSyncing(true);
     const result = await seedResourcesAction();
     if (result.success) {
-        toast({
-            title: 'Sync Complete!',
-            description: `Resources synced successfully! ${result.count} records are now live.`,
-        });
-    } else {
-        toast({
-            variant: 'destructive',
-            title: 'Sync Failed',
-            description: result.error || 'An unknown error occurred during sync.',
-        });
+      toast({ title: 'Sync Complete!', description: 'Resources are now live.' });
     }
     setIsSyncing(false);
   };
@@ -90,35 +77,27 @@ export default function DashboardPage() {
           </Button>
         </div>
 
-        {error && <div className="text-center text-destructive p-4 bg-destructive/10 rounded-md">{error}</div>}
+        {error && <div className="text-destructive p-4 bg-destructive/10 rounded-md mb-8">{error}</div>}
 
-        {/* Temporary Admin Section */}
-        <Card className="mb-8 bg-secondary border-primary/20">
-            <CardHeader>
-                <CardTitle>Admin Control</CardTitle>
-                <CardDescription>Temporary controls for database management.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Button onClick={handleResourceSync} disabled={isSyncing} className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg p-6">
-                    {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Rocket className="mr-2 h-4 w-4"/>}
-                    {isSyncing ? 'Syncing...' : '🚀 Initial Database Sync'}
-                </Button>
-                <p className="text-sm text-muted-foreground mt-2">
-                    Click here to upload the contents of <code>src/lib/resourcesData.json</code> to the 'resources' collection in Firestore.
-                </p>
-            </CardContent>
+        <Card className="mb-8 bg-secondary/50 border-primary/20">
+          <CardHeader>
+            <CardTitle>Admin Control</CardTitle>
+            <CardDescription>Database management tools.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={handleResourceSync} disabled={isSyncing}>
+              {isSyncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Rocket className="mr-2 h-4 w-4"/>}
+              Sync Database
+            </Button>
+          </CardContent>
         </Card>
 
-
-        {plans.length === 0 && !error ? (
-          <div className="text-center py-20 bg-card rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center">
-            <BookOpen className="h-12 w-12 text-muted-foreground" />
+        {plans.length === 0 ? (
+          <div className="text-center py-20 border-2 border-dashed rounded-lg">
+            <BookOpen className="h-12 w-12 mx-auto text-muted-foreground" />
             <h2 className="mt-6 text-2xl font-semibold">No Saved Plans Yet</h2>
-            <p className="text-muted-foreground mt-2 max-w-sm mx-auto">
-              You haven't created any study plans. Get started by creating your first one!
-            </p>
             <Button asChild className="mt-6">
-                <Link href="/"><PlusCircle className="mr-2 h-4 w-4"/>Create New Plan</Link>
+              <Link href="/"><PlusCircle className="mr-2 h-4 w-4"/>Create New Plan</Link>
             </Button>
           </div>
         ) : (
@@ -127,19 +106,17 @@ export default function DashboardPage() {
               <Card key={plan.id} className="flex flex-col hover:border-primary/50 transition-colors">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                        <BookOpen className="h-5 w-5" />
-                      </span>
-                      <span>{plan.request.examType}</span>
+                    <BookOpen className="h-5 w-5 text-primary" />
+                    <span>{plan.request.examType}</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex-grow">
-                   <CardDescription>
+                  <CardDescription>
                     Created {formatDistanceToNow(plan.createdAt, { addSuffix: true })}
                   </CardDescription>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {plan.response?.reduce((acc: number, week: any) => acc + week.modules.length, 0) || 0} total modules
-                  </p>
+                  <Button asChild className="w-full mt-4" variant="outline">
+                    <Link href={`/dashboard/plan/${plan.id}`}>View Study Path</Link>
+                  </Button>
                 </CardContent>
               </Card>
             ))}

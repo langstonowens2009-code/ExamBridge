@@ -1,5 +1,18 @@
 import { getFirestore } from "@/lib/firebaseAdmin";
 
+export async function getUserStats(userId: string) {
+  const db = getFirestore();
+  if (!db) return { success: false, error: "Database not initialized" };
+
+  try {
+    const userDoc = await db.collection("users").doc(userId).get();
+    return { success: true, data: userDoc.exists ? userDoc.data() : null };
+  } catch (error) {
+    console.error("Error fetching user stats:", error);
+    return { success: false, error: "Failed to fetch user stats" };
+  }
+}
+
 export async function getUserPerformance(userId: string) {
   const db = getFirestore();
   
@@ -18,7 +31,7 @@ export async function getUserPerformance(userId: string) {
       .get();
 
     if (snapshot.empty) {
-      return { success: false, data: null };
+      return { success: true, data: null };
     }
 
     return { 

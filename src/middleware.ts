@@ -2,34 +2,19 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get('firebaseIdToken');
-  const { pathname } = request.nextUrl;
+  // Try to find any session-related cookie
+  const session = request.cookies.get('__session')?.value || request.cookies.get('firebase-auth')?.value;
 
-  const protectedRoutes = ['/dashboard'];
-
-  if (!token && protectedRoutes.some(p => pathname.startsWith(p))) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // If the user is logged in and tries to access login/signup, redirect to home
-  if (token && (pathname === '/login' || pathname === '/signup')) {
-    return NextResponse.redirect(new URL('/', request.url));
+  // If trying to access dashboard without any session cookie, redirect to login
+  if (!session && request.nextUrl.pathname.startsWith('/dashboard')) {
+    // Optional: Log this for debugging
+    console.log("Middleware: No session found, redirecting to login");
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ['/dashboard/:path*'],
 };

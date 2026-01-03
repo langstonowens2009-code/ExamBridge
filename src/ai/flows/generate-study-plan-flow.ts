@@ -24,35 +24,31 @@ export async function generateStudyPlan(
 
     const result = await model.generateContent(prompt);
     const text = result.response.text();
-    console.log("RAW_AI_TEXT:", text);
 
-    // 1. Parse raw AI JSON
+    // 1. Parse and extract the array
     const rawData = JSON.parse(text.trim());
-    
-    // 2. Extract the array (AI might wrap it or return it raw)
     const rawArray = Array.isArray(rawData.studyPlan) ? rawData.studyPlan : 
                      (Array.isArray(rawData) ? rawData : []);
 
-    // 3. THE FIX: Strip Zod metadata using JSON roundtrip (fixes "Ln is not a function")
+    // 2. Clean Zod metadata
     const cleanArray = JSON.parse(JSON.stringify(rawArray));
 
-    // 4. THE SCHEMA FIX: Map to the exact 'modules' structure (fixes ts2353)
+    // 3. SCHEMA MAPPING: This structure satisfies the ts(2353) error exactly.
     const finalized: GenerateStudyPlanOutput = {
       studyPlan: cleanArray.map((w: any) => ({
         week: String(w.week || w.weekNumber || "Study Week"),
         modules: (Array.isArray(w.modules) ? w.modules : (Array.isArray(w.activities) ? w.activities : [])).map((m: any) => ({
-          topic: typeof m === 'string' ? m : String(m.topic || "Topic"),
-          description: typeof m === 'string' ? "AI-generated study module" : String(m.description || ""),
+          topic: typeof m === 'string' ? m : String(m.topic || "Topic Breakdown"),
+          description: typeof m === 'string' ? "Planned study session" : String(m.description || ""),
           link: "#" 
         }))
       }))
     };
 
-    console.log("CLEAN_PLAN_FINAL:", JSON.stringify(finalized));
     return finalized;
 
   } catch (error: any) {
-    console.error("FINAL_SERIALIZATION_ERROR:", error.message);
-    throw new Error("AI failed to generate a plan matching the required format.");
+    console.error("FINAL_SCHEMA_MATCH_ERROR:", error.message);
+    throw new Error("AI failed to generate plan.");
   }
 }

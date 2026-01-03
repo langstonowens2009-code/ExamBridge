@@ -16,32 +16,32 @@ const model = genAI.getGenerativeModel({
 export async function generateStudyPlan(
   input: GenerateStudyPlanInput
 ): Promise<GenerateStudyPlanOutput> {
-  console.log("AI_INPUT_START:", input.examType);
-  
   try {
     const prompt = `Create a study plan for: ${input.examType}.
     Topics: ${input.topics.map(t => t.topic).join(', ')}.
-    Return ONLY a JSON object with this structure: { "topic": string, "weeks": [...] }`;
+    Return structure: { "topic": string, "weeks": [{ "weekNumber": number, "theme": string, "activities": string[] }] }`;
 
     const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    const text = result.response.text();
 
-    // 1. Parse the AI response
     const rawData = JSON.parse(text.trim());
-
-    // 2. EXTRACTION: Get just the plan data, skipping Zod wrapper if it exists
+    
+    // Extract the plan data from the AI response
     const planData = rawData.studyPlan ? rawData.studyPlan : rawData;
 
-    // 3. SERIALIZATION FIX: This strips all Zod metadata (_def, ~standard)
-    // and creates a plain object that Next.js 15 can safely pass to the UI.
+    // Deep clone to strip Zod metadata and ensure plain object
     const cleanPlan = JSON.parse(JSON.stringify(planData));
 
-    // 4. MAPPING FIX: Ensure the dashboard sees "weeks" even if AI used "weeklySchedule"
-    return {
+    // This specific structure clears the TypeScript errors (red squiggles)
+    // by ensuring 'weeks' is always an array, even if the AI used a different name.
+    const output: GenerateStudyPlanOutput = {
       topic: cleanPlan.topic || input.examType,
-      weeks: cleanPlan.weeks || cleanPlan.weeklySchedule || []
-    } as GenerateStudyPlanOutput;
+      weeks: Array.isArray(cleanPlan.weeks) 
+        ? cleanPlan.weeks 
+        : (Array.isArray(cleanPlan.weeklySchedule) ? cleanPlan.weeklySchedule : [])
+    };
+
+    return output;
 
   } catch (error: any) {
     console.error("FINAL_PATCH_ERROR:", error.message);

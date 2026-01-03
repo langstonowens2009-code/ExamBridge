@@ -3,7 +3,6 @@
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-// Corrected capitalized import
 import { generateStudySessionAction } from '@/app/actions/generateStudySession';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -83,14 +82,20 @@ function StudySessionContent() {
 
   return (
     <div className="space-y-8">
+      <h1 className="text-3xl font-bold mb-8">Study Room: <span className="text-primary">{topic}</span></h1>
+      
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <BookText className="h-6 w-6 text-primary" /> Mastery Notes: {topic}
+            <BookText className="h-6 w-6 text-primary" /> Mastery Notes
           </CardTitle>
+          <CardDescription>Key concepts and summaries curated by AI.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sessionData.notes }} />
+          <div 
+            className="prose prose-sm dark:prose-invert max-w-none" 
+            dangerouslySetInnerHTML={{ __html: sessionData.notes }} 
+          />
         </CardContent>
       </Card>
 
@@ -99,29 +104,51 @@ function StudySessionContent() {
           <CardTitle className="flex items-center gap-2">
             <HelpCircle className="h-6 w-6 text-primary" /> Practice Questions
           </CardTitle>
+          <CardDescription>Test your understanding of the material.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {sessionData.questions.map((q, qIndex) => (
             <div key={qIndex} className="p-4 border rounded-lg">
               <p className="font-semibold mb-4">{qIndex + 1}. {q.q}</p>
-              <RadioGroup onValueChange={(v) => handleAnswerChange(qIndex, parseInt(v))} disabled={submitted}>
+              <RadioGroup 
+                onValueChange={(v) => handleAnswerChange(qIndex, parseInt(v))} 
+                disabled={submitted}
+              >
                 {q.options.map((opt, oIndex) => (
                   <div key={oIndex} className="flex items-center space-x-2">
                     <RadioGroupItem value={oIndex.toString()} id={`q${qIndex}-o${oIndex}`} />
-                    <Label htmlFor={`q${qIndex}-o${oIndex}`} className={cn(
-                      submitted && (q.answer === oIndex ? 'text-green-600 font-bold' : (userAnswers[qIndex] === oIndex ? 'text-red-600' : ''))
-                    )}>{opt}</Label>
+                    <Label 
+                      htmlFor={`q${qIndex}-o${oIndex}`} 
+                      className={cn(
+                        "font-normal",
+                        submitted && (q.answer === oIndex ? 'text-green-600 font-bold' : (userAnswers[qIndex] === oIndex ? 'text-red-600' : ''))
+                      )}
+                    >
+                      {opt}
+                    </Label>
                   </div>
                 ))}
               </RadioGroup>
               {submitted && (
-                <div className={cn("mt-4 p-3 rounded-md text-sm", userAnswers[qIndex] === q.answer ? 'bg-green-100' : 'bg-red-100')}>
-                  <p>{q.explanation}</p>
+                <div className={cn(
+                  "mt-4 p-3 rounded-md text-sm", 
+                  userAnswers[qIndex] === q.answer ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                )}>
+                  <div className="flex items-center gap-2">
+                    {userAnswers[qIndex] === q.answer ? <CheckCircle className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+                    <p>{q.explanation}</p>
+                  </div>
                 </div>
               )}
             </div>
           ))}
-          <Button onClick={handleSubmit} disabled={submitted || userAnswers.includes(-1)} className="w-full">Submit Answers</Button>
+          <Button 
+            onClick={handleSubmit} 
+            disabled={submitted || userAnswers.includes(-1)} 
+            className="w-full"
+          >
+            Submit Answers
+          </Button>
         </CardContent>
       </Card>
     </div>
@@ -129,15 +156,11 @@ function StudySessionContent() {
 }
 
 export default function StudyPage() {
-  const searchParams = useSearchParams();
-  const topic = searchParams.get('topic');
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container mx-auto py-8 px-4">
-        <h1 className="text-3xl font-bold mb-8">Study Room: <span className="text-primary">{topic}</span></h1>
-        <Suspense fallback={<Loader2 className="animate-spin" />}>
+        <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>}>
           <StudySessionContent />
         </Suspense>
       </main>

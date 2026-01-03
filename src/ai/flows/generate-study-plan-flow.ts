@@ -2,7 +2,6 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { 
-  GenerateStudyPlanOutputSchema,
   type GenerateStudyPlanInput,
   type GenerateStudyPlanOutput 
 } from '@/ai/schemas/study-path';
@@ -25,23 +24,27 @@ export async function generateStudyPlan(
     const text = result.response.text();
 
     const rawData = JSON.parse(text.trim());
-    const planData = rawData.studyPlan || rawData;
-    
-    // Deep clone to strip Zod metadata
-    const cleanPlan = JSON.parse(JSON.stringify(planData)) as any;
+    const data = rawData.studyPlan || rawData;
+    const clean = JSON.parse(JSON.stringify(data));
 
-    // THE SQUIGGLE FIX: Explicitly satisfy the GenerateStudyPlanOutput interface
-    const finalizedOutput: GenerateStudyPlanOutput = {
-      topic: String(cleanPlan.topic || input.examType),
-      weeks: Array.isArray(cleanPlan.weeks) 
-        ? cleanPlan.weeks 
-        : (Array.isArray(cleanPlan.weeklySchedule) ? cleanPlan.weeklySchedule : [])
+    // THE FIX: This structure matches your schema exactly, removing the red squiggle.
+    // We wrap everything in 'studyPlan' to satisfy the ts(2353) error.
+    const finalized: GenerateStudyPlanOutput = {
+      studyPlan: {
+        topic: String(clean.topic || input.examType),
+        weeks: (Array.isArray(clean.weeks) ? clean.weeks : 
+               Array.isArray(clean.weeklySchedule) ? clean.weeklySchedule : []).map((w: any) => ({
+          weekNumber: Number(w.weekNumber || w.week || 0),
+          theme: String(w.theme || w.topic || w.theme || "Study Session"),
+          activities: Array.isArray(w.activities) ? w.activities.map(String) : []
+        }))
+      }
     };
 
-    return finalizedOutput;
+    return finalized;
 
   } catch (error: any) {
-    console.error("DEPLOYMENT_ERROR:", error.message);
+    console.error("AI_FLOW_CRASH:", error.message);
     throw new Error("AI generated the plan, but it failed to render.");
   }
 }

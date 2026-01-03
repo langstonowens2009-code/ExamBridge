@@ -1,57 +1,32 @@
-'use server';
+import { getFirestore } from "@/lib/firebaseAdmin";
 
-import { db } from '@/lib/firebaseAdmin';
-
-type ActionResult<T = any> = {
-  success: boolean;
-  error?: string;
-  message?: string;
-  data?: T;
-};
-
-/**
- * Fetches the user's performance summary for the dashboard.
- */
-export async function getUserPerformance(userId: string): Promise<ActionResult> {
-  if (!userId) return { success: false, error: 'User ID is required.' };
+export async function getUserPerformance(userId: string) {
+  const db = getFirestore();
+  
+  // If db is null (common during build steps), return a safe error object
+  if (!db) {
+    return { success: false, error: "Database not initialized" };
+  }
 
   try {
-    const userStatsDoc = await db.collection('userStats').doc(userId).get();
+    const snapshot = await db
+      .collection("users")
+      .doc(userId)
+      .collection("performance")
+      .orderBy("timestamp", "desc")
+      .limit(1)
+      .get();
 
-    if (!userStatsDoc.exists) {
-      return { success: true, data: null };
+    if (snapshot.empty) {
+      return { success: false, data: null };
     }
 
-    return { success: true, data: userStatsDoc.data() };
-  } catch (error: any) {
-    console.error("Error fetching performance:", error);
-    return { success: false, error: error.message };
-  }
-}
-
-/**
- * Seeds sample userStats for testing the dashboard UI.
- */
-export async function seedUserStats(userId: string): Promise<ActionResult> {
-  if (!userId) return { success: false, error: 'User ID is required.' };
-
-  try {
-    const userStatsRef = db.collection('userStats').doc(userId);
-
-    const statsData = {
-      weakTopics: ['Right triangles and trigonometry', 'Nonlinear equations', 'Data Analysis'],
-      masteryLevel: 'Intermediate',
-      completedModules: 12,
-      totalModules: 40,
-      testDate: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString(),
-      lastUpdated: new Date().toISOString(),
+    return { 
+      success: true, 
+      data: snapshot.docs[0].data() 
     };
-
-    await userStatsRef.set(statsData, { merge: true });
-
-    return { success: true, message: `Sample stats for user ${userId} created.` };
-  } catch (error: any) {
-    console.error("Error seeding user stats:", error);
-    return { success: false, error: error.message };
+  } catch (error) {
+    console.error("Error fetching performance:", error);
+    return { success: false, error: "Failed to fetch performance data" };
   }
 }

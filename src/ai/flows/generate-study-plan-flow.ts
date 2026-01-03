@@ -9,37 +9,32 @@ import {
 } from '@/ai/schemas/study-path';
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENAI_API_KEY!);
-// Using the 2.0 stable model to avoid 1.5-flash retirement errors
 const model = genAI.getGenerativeModel({ 
   model: "gemini-2.0-flash",
-  generationConfig: { responseMimeType: "application/json" } // Forces JSON output
+  generationConfig: { responseMimeType: "application/json" } 
 });
 
 export async function generateStudyPlan(
   input: GenerateStudyPlanInput
 ): Promise<GenerateStudyPlanOutput> {
   try {
-    const prompt = `Create a study plan for: ${input.examType}.
+    // Added "be concise" to prevent the response from being cut off
+    const prompt = `Create a CONCISE study plan for: ${input.examType}.
     Topics: ${input.topics.map(t => t.topic).join(', ')}.
-    Return ONLY a JSON object matching this schema: ${JSON.stringify(GenerateStudyPlanOutputSchema)}`;
+    Return ONLY a JSON object matching this schema: ${JSON.stringify(GenerateStudyPlanOutputSchema)}.
+    Limit the plan to exactly 3 main sections.`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-    
-    // Log the actual text for your Cloud Run dashboard
-    console.log("DEBUG_AI_TEXT:", text);
 
-    if (!text) throw new Error("AI returned nothing.");
+    if (!text) throw new Error("AI returned empty text.");
 
-    // Parse the JSON directly since we forced MIME type
-    return JSON.parse(text) as GenerateStudyPlanOutput;
+    // Directly parse since we are forcing JSON mode
+    return JSON.parse(text.trim()) as GenerateStudyPlanOutput;
 
   } catch (error: any) {
-    // This detailed log will show up in your Firebase logs
-    console.error("DETAILED_AI_ERROR:", error.message || error);
-    
-    // This message goes to your website UI
-    throw new Error(error.message || "AI failed to generate plan.");
+    console.error("FINAL_DEBUG_ERROR:", error.message || error);
+    throw new Error("Almost there! The plan was too long to load. Trying again...");
   }
 }
